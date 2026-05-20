@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="description" content="Manuel Cerqua — Operaio Specializzato CNC | Sviluppatore Software Junior">
+  <meta name="theme-color" content="#000010">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>Manuel Cerqua — Portfolio</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Exo+2:ital,wght@0,300;0,400;0,600;1,300&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+    }
+  }
+  </script>
+</head>
+<body>
+
+  <canvas id="canvas"></canvas>
+
+  <!-- ═══ HUD ═══ -->
+  <div id="hud">
+
+    <div id="title-block">
+      <h1 id="main-title">MANUEL CERQUA</h1>
+      <p id="main-subtitle">Operaio Specializzato CNC &nbsp;·&nbsp; Sviluppatore Software Junior</p>
+    </div>
+
+    <div id="planet-label" class="hidden">
+      <span id="planet-name"></span>
+    </div>
+
+    <div id="hint-block">
+      <span class="hint-desktop">🖱 Trascina per ruotare &nbsp;·&nbsp; Scroll per zoom &nbsp;·&nbsp; Clicca un pianeta per esplorare</span>
+      <span class="hint-mobile">Trascina per ruotare &nbsp;·&nbsp; Pinch per zoom &nbsp;·&nbsp; Tocca un pianeta</span>
+    </div>
+
+  </div>
+
+  <!-- ═══ LOADING ═══ -->
+  <div id="loading-screen">
+    <div class="loading-content">
+      <div class="loading-ring">
+        <div class="ring-inner"></div>
+      </div>
+      <p class="loading-text">Inizializzazione universo<span class="dots">...</span></p>
+    </div>
+  </div>
+
+  <!-- anime.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
+  <!-- Main module -->
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>
