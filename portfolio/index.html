@@ -5,13 +5,77 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta name="description" content="Manuel Cerqua — Operaio Specializzato CNC | Sviluppatore Software Junior">
   <meta name="theme-color" content="#000010">
-  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <title>Manuel Cerqua — Portfolio</title>
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Exo+2:ital,wght@0,300;0,400;0,600;1,300&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css">
+
+  <style>
+    /* Label pianeta: posizionata via JS in screen space */
+    #planet-label {
+      position: absolute;
+      background: rgba(0, 0, 0, 0.45);
+      border: 1px solid rgba(0, 245, 255, 0.30);
+      border-radius: 6px;
+      padding: 8px 18px 10px;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      transition: opacity 0.25s ease;
+      pointer-events: none;
+      white-space: nowrap;
+      text-align: center;
+      line-height: 1;
+    }
+    #planet-label.hidden { opacity: 0; pointer-events: none; }
+    #planet-name {
+      display: block;
+      font-family: var(--font-title);
+      font-size: clamp(0.65rem, 1.8vw, 0.85rem);
+      font-weight: 700;
+      color: var(--cyan);
+      letter-spacing: 0.22em;
+      text-shadow: 0 0 12px rgba(0,245,255,0.5);
+    }
+    #planet-category {
+      display: block;
+      font-family: var(--font-body);
+      font-size: clamp(0.52rem, 1.3vw, 0.68rem);
+      font-weight: 300;
+      color: rgba(232,244,248,0.65);
+      letter-spacing: 0.14em;
+      margin-top: 4px;
+      text-transform: uppercase;
+    }
+
+    /* Pulsante torna indietro */
+    #back-hint {
+      position: absolute;
+      bottom: clamp(50px, 8vw, 80px);
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0, 0, 0, 0.50);
+      border: 1px solid rgba(0, 245, 255, 0.22);
+      border-radius: 20px;
+      padding: 8px 24px;
+      cursor: pointer;
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      transition: border-color 0.3s;
+      pointer-events: all;
+    }
+    #back-hint:hover { border-color: rgba(0, 245, 255, 0.6); }
+    #back-hint.hidden { display: none; }
+    #back-hint span {
+      font-family: 'Exo 2', sans-serif;
+      font-size: clamp(0.55rem, 1.3vw, 0.75rem);
+      color: rgba(0, 245, 255, 0.72);
+      letter-spacing: 0.14em;
+      white-space: nowrap;
+    }
+  </style>
 
   <script type="importmap">
   {
@@ -34,8 +98,15 @@
       <p id="main-subtitle">Operaio Specializzato CNC &nbsp;·&nbsp; Sviluppatore Software Junior</p>
     </div>
 
+    <!-- Label pianeta — posizionato via JS sopra il pianeta -->
     <div id="planet-label" class="hidden">
       <span id="planet-name"></span>
+      <span id="planet-category"></span>
+    </div>
+
+    <!-- Visibile solo dopo zoom su un pianeta -->
+    <div id="back-hint" class="hidden">
+      <span>← &nbsp;Click o ESC per tornare</span>
     </div>
 
     <div id="hint-block">
@@ -55,9 +126,7 @@
     </div>
   </div>
 
-  <!-- anime.js -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
-  <!-- Main module -->
   <script type="module" src="js/main.js"></script>
 </body>
 </html>
