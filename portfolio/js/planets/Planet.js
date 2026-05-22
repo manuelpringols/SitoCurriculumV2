@@ -44,7 +44,7 @@ export class Planet {
     this.bodyGroup.add(this.spinGroup);
     this.scene.add(this.orbitGroup);
 
-    this._buildOrbitRing();
+    // this._buildOrbitRing();
     this._buildBody();
     this._buildAtmosphere();
   }

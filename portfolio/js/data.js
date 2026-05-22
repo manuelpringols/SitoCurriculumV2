@@ -5,7 +5,7 @@
 
 export const ME = {
   nome:     'Manuel Cerqua',
-  titolo:   'Operaio Specializzato CNC · Sviluppatore Software Junior',
+  titolo:   'Sviluppatore Software Junior',
   linkedin: 'https://www.linkedin.com/in/manuelpringols', // aggiorna con il tuo URL esatto
   website:  'https://manuelpringols.info',
 };

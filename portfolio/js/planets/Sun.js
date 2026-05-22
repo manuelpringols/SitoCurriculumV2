@@ -86,57 +86,93 @@ export class Sun {
   }
 
   /* ── Corona multi-layer ── */
-  _createCorona() {
-    const layers = [
-      { scale: 1.18, color: 0xffcc55, opacity: 0.95, power: 2.5 },
-      { scale: 1.45, color: 0xff8833, opacity: 0.65, power: 3.0 },
-      { scale: 1.95, color: 0xff5511, opacity: 0.35, power: 3.2 },
-      { scale: 2.80, color: 0xff2200, opacity: 0.15, power: 3.0 },
-      { scale: 4.20, color: 0xff0000, opacity: 0.05, power: 2.8 },
-    ];
+ _createCorona() {
+  const layers = [
+    { scale: 1.22, color: 0xffcc55, opacity: 0.45, power: 2.2, speed: 0.25 },
+    { scale: 1.55, color: 0xff8833, opacity: 0.28, power: 2.8, speed: 0.18 },
+    { scale: 2.10, color: 0xff5511, opacity: 0.16, power: 3.4, speed: 0.12 },
+  ];
 
-    const vert = /* glsl */`
-      varying vec3 vNormal;
-      varying vec3 vViewDir;
-      void main() {
-        vNormal = normalize(normalMatrix * normal);
-        vec4 mvPos = modelViewMatrix * vec4(position, 1.0);
-        vViewDir = normalize(-mvPos.xyz);
-        gl_Position = projectionMatrix * mvPos;
-      }
-    `;
-    const frag = /* glsl */`
-      uniform vec3  uColor;
-      uniform float uIntensity;
-      uniform float uPower;
-      varying vec3 vNormal;
-      varying vec3 vViewDir;
-      void main() {
-        float f = pow(1.0 - clamp(dot(vNormal, vViewDir), 0.0, 1.0), uPower);
-        gl_FragColor = vec4(uColor, f * uIntensity);
-      }
-    `;
+  const vert = /* glsl */`
+    uniform float uTime;
+    uniform float uSpeed;
 
-    layers.forEach(({ scale, color, opacity, power }) => {
-      const g = new THREE.SphereGeometry(5, 48, 48);
-      const m = new THREE.ShaderMaterial({
-        uniforms: {
-          uColor:     { value: new THREE.Color(color) },
-          uIntensity: { value: opacity },
-          uPower:     { value: power },
-        },
-        vertexShader: vert,
-        fragmentShader: frag,
-        transparent: true,
-        blending: THREE.AdditiveBlending,
-        depthWrite: false,
-        side: THREE.FrontSide,
-      });
-      const mesh = new THREE.Mesh(g, m);
-      mesh.scale.setScalar(scale);
-      this.group.add(mesh);
+    varying vec3 vNormal;
+    varying vec3 vViewDir;
+    varying vec3 vWorldPos;
+
+    void main() {
+      vNormal = normalize(normalMatrix * normal);
+
+      vec3 pos = position;
+      float wave =
+        sin(pos.x * 2.4 + uTime * uSpeed * 4.0) *
+        sin(pos.y * 2.1 + uTime * uSpeed * 3.0) *
+        sin(pos.z * 2.8 + uTime * uSpeed * 2.5);
+
+      pos += normal * wave * 0.35;
+
+      vec4 mvPos = modelViewMatrix * vec4(pos, 1.0);
+      vViewDir = normalize(-mvPos.xyz);
+      vWorldPos = pos;
+
+      gl_Position = projectionMatrix * mvPos;
+    }
+  `;
+
+  const frag = /* glsl */`
+    uniform vec3 uColor;
+    uniform float uIntensity;
+    uniform float uPower;
+    uniform float uTime;
+    uniform float uSpeed;
+
+    varying vec3 vNormal;
+    varying vec3 vViewDir;
+    varying vec3 vWorldPos;
+
+    void main() {
+      float rim = pow(1.0 - clamp(dot(vNormal, vViewDir), 0.0, 1.0), uPower);
+
+      float flare =
+        sin(vWorldPos.y * 7.0 + uTime * uSpeed * 8.0) * 0.5 + 0.5;
+
+      float pulse = 0.75 + sin(uTime * uSpeed * 5.0) * 0.25;
+
+      float alpha = rim * uIntensity * pulse;
+      alpha *= 0.65 + flare * 0.35;
+
+      gl_FragColor = vec4(uColor, alpha);
+    }
+  `;
+
+  this.coronaMats = [];
+
+  layers.forEach(({ scale, color, opacity, power, speed }) => {
+    const g = new THREE.SphereGeometry(5, 96, 96);
+
+    const m = new THREE.ShaderMaterial({
+      uniforms: {
+        uColor: { value: new THREE.Color(color) },
+        uIntensity: { value: opacity },
+        uPower: { value: power },
+        uTime: { value: 0 },
+        uSpeed: { value: speed },
+      },
+      vertexShader: vert,
+      fragmentShader: frag,
+      transparent: true,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+      side: THREE.FrontSide,
     });
-  }
+
+    const mesh = new THREE.Mesh(g, m);
+    mesh.scale.setScalar(scale);
+    this.group.add(mesh);
+    this.coronaMats.push(m);
+  });
+}
 
   /* ── Prominenze: particelle pulsanti vicino alla superficie ── */
   _createProminences() {
@@ -201,20 +237,26 @@ export class Sun {
 
   /* ── Luce + ambient ── */
   _createLight() {
-    this.sunLight = new THREE.PointLight(0xfff4d6, 5, 800, 1.1);
+    this.sunLight = new THREE.PointLight(0xfff4d6, 3.5, 800, 0.1);
     this.group.add(this.sunLight);
     this.scene.add(new THREE.AmbientLight(0x101428, 0.4));
   }
 
   /* ── Update ── */
   update(time) {
-    if (this.coreMat)        this.coreMat.uniforms.uTime.value       = time;
-    if (this.prominenceMat)  this.prominenceMat.uniforms.uTime.value = time;
+  if (this.coreMat) this.coreMat.uniforms.uTime.value = time;
+  if (this.prominenceMat) this.prominenceMat.uniforms.uTime.value = time;
 
-    const pulse = 1 + Math.sin(time * 0.7) * 0.015;
-    this.group.scale.setScalar(pulse);
-    this.sunLight.intensity = 5 + Math.sin(time * 1.5) * 0.5;
+  if (this.coronaMats) {
+    this.coronaMats.forEach((mat) => {
+      mat.uniforms.uTime.value = time;
+    });
   }
+
+  const pulse = 1 + Math.sin(time * 0.7) * 0.015;
+  this.group.scale.setScalar(pulse);
+  this.sunLight.intensity = 1.5 + Math.sin(time * 1.5) * 0.25;
+}
 
   getWorldPosition() {
     const p = new THREE.Vector3();

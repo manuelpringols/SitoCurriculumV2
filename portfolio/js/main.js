@@ -96,32 +96,32 @@ class App {
       {
         Class: Earth,   key: 'chisono',
         name: SECTIONS.chisono.title,
-        radius: 2.6, orbitRadius: 24, orbitSpeed: 0.30, rotSpeed: 0.40, inclination: 0.04,
+        radius: 10.1, orbitRadius: 132, orbitSpeed: 0.30, rotSpeed: 0.40, inclination: 0.04,
       },
       {
         Class: Mars,    key: 'esperienze',
         name: SECTIONS.esperienze.title,
-        radius: 2.0, orbitRadius: 36, orbitSpeed: 0.22, rotSpeed: 0.45, inclination: 0.07,
+        radius: 30.0, orbitRadius: 148, orbitSpeed: 0.22, rotSpeed: 0.45, inclination: 0.07,
       },
       {
         Class: Saturn,  key: 'istruzione',
         name: SECTIONS.istruzione.title,
-        radius: 2.8, orbitRadius: 50, orbitSpeed: 0.16, rotSpeed: 0.38, inclination: 0.03,
+        radius: 30.8, orbitRadius: 168, orbitSpeed: 0.16, rotSpeed: 0.38, inclination: 0.03,
       },
       {
         Class: Neptune, key: 'competenze',
         name: SECTIONS.competenze.title,
-        radius: 2.4, orbitRadius: 66, orbitSpeed: 0.11, rotSpeed: 0.42, inclination: 0.05,
+        radius: 30.4, orbitRadius: 192, orbitSpeed: 0.11, rotSpeed: 0.42, inclination: 0.05,
       },
       {
         Class: Jupiter, key: 'devops',
         name: SECTIONS.devops.title,
-        radius: 4.2, orbitRadius: 84, orbitSpeed: 0.075, rotSpeed: 0.55, inclination: 0.03,
+        radius: 50.4, orbitRadius: 1118, orbitSpeed: 0.075, rotSpeed: 0.55, inclination: 0.03,
       },
       {
         Class: Mercury, key: 'contatti',
         name: SECTIONS.contatti.title,
-        radius: 1.5, orbitRadius: 100, orbitSpeed: 0.052, rotSpeed: 0.30, inclination: 0.02,
+        radius: 20.3, orbitRadius: 1142, orbitSpeed: 0.052, rotSpeed: 0.30, inclination: 0.02,
       },
     ];
 

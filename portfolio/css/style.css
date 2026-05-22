@@ -50,11 +50,17 @@ html, body {
 #title-block {
   position: absolute;
   top: clamp(16px, 5vw, 44px);
-  left: 50%;
-  transform: translateX(-50%);
+
+  left: 0;
+  right: 0;
+
+  margin: 0 auto;
+  width: min(92vw, 1200px);
+
+  padding-inline: 16px;
+
   text-align: center;
-  opacity: 0; /* anime.js lo porta a 1 */
-  width: 90%;
+  opacity: 0;
 }
 
 #main-title {
@@ -62,9 +68,15 @@ html, body {
   font-size: clamp(1.1rem, 4.5vw, 2.6rem);
   font-weight: 900;
   color: var(--cyan);
-  letter-spacing: clamp(0.15em, 0.5vw, 0.4em);
+
+  letter-spacing: clamp(0.08em, 0.35vw, 0.22em);
+
   text-shadow: var(--glow-cyan);
+
   white-space: nowrap;
+
+  max-width: 100%;
+  overflow-wrap: break-word;
 }
 
 #main-subtitle {
