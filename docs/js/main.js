@@ -27,6 +27,9 @@ class App {
     this._zooming      = false;  // transizione in corso
     this._glitch       = null;   // Glitchium instance
     this._booting      = true;   // blocca input durante il boot
+    this._mouseX       = 0;      // pixel X mouse
+    this._mouseY       = 0;      // pixel Y mouse
+    this._onSun        = false;  // cursore sul sole
 
     this._init();
   }
@@ -516,70 +519,80 @@ class App {
 
   /* ── Pannello dettaglio sinistro ── */
   _openDetailPanel(item, onBack) {
-    const panel     = document.getElementById('detail-panel');
-    const isOpen    = !panel.classList.contains('hidden');
+    const panel   = document.getElementById('detail-panel');
+    const titleEl = document.getElementById('detail-title');
+    const bodyEl  = document.getElementById('detail-body');
+    const isOpen  = !panel.classList.contains('hidden');
 
-    const applyContent = () => {
-      const titleEl = document.getElementById('detail-title');
-      const bodyEl  = document.getElementById('detail-body');
-      const titleFinal = item.title.toUpperCase();
-      const bodyFinal  = item.body;
-
-      /* Ricollega back button (clone evita listener duplicati) */
+    /* Ricollega back button */
+    const wireBack = () => {
       const backBtn = document.getElementById('detail-back');
       const newBack = backBtn.cloneNode(true);
       backBtn.parentNode.replaceChild(newBack, backBtn);
       newBack.addEventListener('click', onBack);
+    };
 
-      /* Scramble titolo: pieno e veloce */
-      this._scramble(titleEl, titleFinal, 420, 1.0);
+    /* Nasconde nav solo su mobile — su desktop entrambi i pannelli coesistono */
+    const hideNav = () => {
+      if (!this.device.isMobile) return;
+      document.getElementById('content-panel')?.classList.add('nav-hidden');
+    };
 
-      /* Scramble body: densità buona, staggerato di 120ms dopo il titolo
-         così il titolo parte prima e il body segue — effetto cascata */
-      setTimeout(() => this._scramble(bodyEl, bodyFinal, 520, 0.75), 120);
+    /* Scramble: titolo pieno → body con leggero stagger */
+    const doScramble = () => {
+      this._scramble(titleEl, item.title.toUpperCase(), 420, 1.0);
+      setTimeout(() => this._scramble(bodyEl, item.body, 520, 0.75), 130);
     };
 
     if (!isOpen) {
-      /* Prima apertura: semplice fade, Glitchium è l'unica animazione */
+      /*
+       * Prima apertura — solo fade + scramble, NO Glitchium.
+       * Evita il conflitto fin dall'inizio.
+       */
       panel.classList.remove('hidden', 'closing');
       panel.style.clipPath   = 'inset(0% 0 0% 0)';
       panel.style.opacity    = '0';
       panel.style.transition = 'opacity 0.25s ease';
-      applyContent();
+      titleEl.textContent = '';
+      bodyEl.textContent  = '';
+      wireBack();
       void panel.offsetWidth;
-      panel.style.opacity    = '1';
-      setTimeout(() => this._glitchDetailPanel(), 280);
+      panel.style.opacity = '1';
+      /* Scramble parte dopo il fade, nav sparisce dopo che detail è stabile */
+      setTimeout(doScramble, 270);
+      setTimeout(hideNav, 600);
+
     } else {
       /*
-       * Pannello già aperto: Glitchium gestisce interamente la transizione.
-       * 1. Glitchium parte → effetto glitch visibile
-       * 2. A metà glitch (200ms) → swap contenuto silenzioso
-       * 3. Glitchium continua sul nuovo contenuto → si ferma a 650ms
+       * Pannello già aperto — sequenza netta:
+       * 1. Glitchium parte (effetto visivo)
+       * 2. A metà: svuota testo silenziosamente
+       * 3. Glitchium si ferma
+       * 4. Scramble rivela il nuovo testo
        */
       this._initBodyGlitch();
+      if (this._bodyCtrl) try { this._bodyCtrl.start(); } catch(e) {}
 
-      if (this._bodyCtrl) {
-        try { this._bodyCtrl.start(); } catch(e) {}
-      }
-
-      /* Swap contenuto a metà del glitch */
+      /* Svuota e ricollega a metà del glitch */
       setTimeout(() => {
-        applyContent();
-        /* Scanline rapida in sincrono */
-        const scanline = document.getElementById('detail-scanline');
-        scanline.style.animation = 'none';
-        void scanline.offsetWidth;
-        scanline.style.animation = 'detail-scan 0.35s linear forwards';
-      }, 200);
+        titleEl.textContent = '';
+        bodyEl.textContent  = '';
+        wireBack();
+        const sl = document.getElementById('detail-scanline');
+        sl.style.animation = 'none';
+        void sl.offsetWidth;
+        sl.style.animation = 'detail-scan 0.35s linear forwards';
+      }, 220);
 
-      /* Stop Glitchium dopo che il nuovo contenuto è stabile */
+      /* Stop Glitchium → scramble, poi nascondi nav */
       setTimeout(() => {
         if (this._bodyCtrl) try { this._bodyCtrl.stop(); } catch(e) {}
-      }, 650);
+        doScramble();
+        setTimeout(hideNav, 300);
+      }, 660);
     }
   }
-
-  _closeDetailPanel() {
+  _closeDetailPanel(restoreNav = true) {
     const panel = document.getElementById('detail-panel');
     if (panel.classList.contains('hidden')) return;
     panel.classList.remove('opening');
@@ -588,6 +601,11 @@ class App {
       panel.classList.add('hidden');
       panel.classList.remove('closing');
     }, 270);
+
+    /* Ripristina nav solo su mobile */
+    if (restoreNav && this.device.isMobile) {
+      document.getElementById('content-panel')?.classList.remove('nav-hidden');
+    }
   }
 
   /* Fade + slide mini-transition tra viste */
@@ -607,7 +625,7 @@ class App {
   }
 
   _closePanel() {
-    this._closeDetailPanel();  // chiude anche il pannello sinistro
+    this._closeDetailPanel(false);  // chiude anche il pannello sinistro (senza ripristinare nav)
     const panel = document.getElementById('content-panel');
     if (panel.classList.contains('hidden')) return;
     panel.classList.remove('opening');
@@ -624,8 +642,10 @@ class App {
     const canvas = this.renderer.domElement;
 
     window.addEventListener('mousemove', (e) => {
-      this.pointer.x =  (e.clientX / window.innerWidth)  * 2 - 1;
-      this.pointer.y = -(e.clientY / window.innerHeight) * 2 + 1;
+      this._mouseX    =  e.clientX;
+      this._mouseY    =  e.clientY;
+      this.pointer.x  =  (e.clientX / window.innerWidth)  * 2 - 1;
+      this.pointer.y  = -(e.clientY / window.innerHeight) * 2 + 1;
     });
 
     canvas.addEventListener('click', () => this._onClick());
@@ -650,11 +670,14 @@ class App {
   }
 
   _onClick() {
-    if (this._booting)       return;
-    if (this._zooming)       return;
+    if (this._booting)  return;
+    if (this._zooming)  return;
 
-    /* In focus: click ignorato — si esce solo con ESC o tasto back */
-    if (this._lockedPlanet) return;
+    /* Su mobile il tap sullo sfondo esce dal focus (no tasto ESC fisico) */
+    if (this._lockedPlanet) {
+      if (this.device.isMobile) this._returnToFree();
+      return;
+    }
 
     this.raycaster.setFromCamera(this.pointer, this.camera);
     const hits = this.raycaster.intersectObjects(this.planets.map(p => p.mesh), false);
@@ -771,6 +794,44 @@ class App {
     }, 1500);
   }
 
+  /* ══════════════════════════════ CURSORE ════════════════════════════ */
+
+  _updateCursor() {
+    const el = document.getElementById('cursor');
+    if (!el || this.device.isMobile) return;
+
+    /* Posiziona il cursore */
+    el.style.transform = `translate(${this._mouseX}px, ${this._mouseY}px)`;
+
+    /* ── Rilevamento sole ── */
+    const projected = new THREE.Vector3(0,0,0).project(this.camera);
+    const sx = ( projected.x * 0.5 + 0.5) * window.innerWidth;
+    const sy = (-projected.y * 0.5 + 0.5) * window.innerHeight;
+    const edgePx = new THREE.Vector3(28,0,0).project(this.camera);
+    const ex  = ( edgePx.x * 0.5 + 0.5) * window.innerWidth;
+    const sunR = Math.abs(ex - sx) * 1.3;
+    const onSun = Math.hypot(this._mouseX - sx, this._mouseY - sy) < sunR;
+
+    /* ── Rilevamento pianeta ── */
+    const onPlanet = !onSun && this._hovered !== null;
+    const planetColor = onPlanet && this._hovered?.atmosphereColor
+      ? '#' + this._hovered.atmosphereColor.toString(16).padStart(6,'0')
+      : null;
+
+    /* ── Applica stato ── */
+    const wasOnSun    = el.classList.contains('on-sun');
+    const wasOnPlanet = el.classList.contains('on-planet');
+
+    if (onSun !== wasOnSun || onPlanet !== wasOnPlanet) {
+      el.classList.toggle('on-sun',    onSun);
+      el.classList.toggle('on-planet', onPlanet);
+
+      if (onPlanet && planetColor) {
+        el.style.setProperty('--planet-color', planetColor);
+      }
+    }
+  }
+
   /* ══════════════════════════════ LOOP ════════════════════════════════ */
 
   _loop() {
@@ -798,6 +859,7 @@ class App {
     if (!this.device.isMobile) {
       this._checkHover();
       this._updateHoverLabel();   // label segue il pianeta orbitante
+      this._updateCursor();       // cursore custom + effetto fuoco sul sole
     }
 
     /* controls.update() solo quando né in zoom né agganciati —
