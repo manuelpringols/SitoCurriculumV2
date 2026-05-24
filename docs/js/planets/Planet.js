@@ -30,7 +30,11 @@ export class Planet {
 
     this._angle      = this.startAngle;
     this.orbitFrozen = false;
-    this.options     = options;  // disponibile in _buildBody() delle sottoclassi   // ← freeze orbita senza fermare la rotazione
+    this.options     = options;
+
+    /* Scala hover — lerp frame-rate independent */
+    this._scaleTarget  = 1.0;
+    this._scaleCurrent = 1.0;
 
     this.orbitGroup = new THREE.Group();
     this.pivotGroup = new THREE.Group();
@@ -107,11 +111,6 @@ export class Planet {
 
   /* ── Update ── */
   update(time, delta = 0.016) {
-    /*
-     * Orbita: si aggiorna solo se non è frozen.
-     * La rotazione assiale (spinGroup) continua sempre —
-     * il pianeta ruota su se stesso anche quando agganciato dalla camera.
-     */
     if (!this.orbitFrozen) {
       this._angle += this.orbitSpeed * delta * 0.6;
       const x = Math.cos(this._angle) * this.orbitRadius;
@@ -119,8 +118,24 @@ export class Planet {
       this.bodyGroup.position.set(x, 0, z);
     }
 
-    /* Rotazione assiale — sempre attiva */
     this.spinGroup.rotation.y += this.rotSpeed * delta * 0.6;
+
+    /*
+     * Scala hover — lerp esponenziale frame-rate independent.
+     * speed=9: ~12% per frame a 60fps, scala a 1.15 in ~12 frame (~0.2s).
+     * Si applica a bodyGroup → scala mesh + atmosfera insieme.
+     */
+    if (this._scaleCurrent !== this._scaleTarget) {
+      const speed  = 9;
+      const factor = 1 - Math.exp(-speed * delta);
+      this._scaleCurrent += (this._scaleTarget - this._scaleCurrent) * factor;
+
+      /* Snap quando siamo a < 0.001 dal target per evitare loop infinito */
+      if (Math.abs(this._scaleCurrent - this._scaleTarget) < 0.001)
+        this._scaleCurrent = this._scaleTarget;
+
+      this.bodyGroup.scale.setScalar(this._scaleCurrent);
+    }
 
     if (this.material?.uniforms?.uTime)      this.material.uniforms.uTime.value = time;
     if (this.cloudMaterial?.uniforms?.uTime) this.cloudMaterial.uniforms.uTime.value = time;
@@ -138,11 +153,14 @@ export class Planet {
   freezeOrbit()   { this.orbitFrozen = true;  }
   unfreezeOrbit() { this.orbitFrozen = false; }
 
-  /* ── Highlight hover ── */
+  /* ── Highlight hover: atmosfera + scala ── */
   highlight(on) {
+    /* Atmosfera */
     if (this.atmosphereMaterial?.uniforms?.uIntensity) {
       this.atmosphereMaterial.uniforms.uIntensity.value =
         on ? this.atmosphereIntensity * 1.8 : this.atmosphereIntensity;
     }
+    /* Scala: 1.15× on hover, torna a 1.0 all'uscita */
+    this._scaleTarget = on ? 3.0 : 1.0;
   }
 }

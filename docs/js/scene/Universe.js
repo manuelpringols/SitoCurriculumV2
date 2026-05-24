@@ -20,8 +20,8 @@ export class Universe {
   }
 
   _setBackground() {
-    this.scene.background = new THREE.Color(0x00021a);
-    this.scene.fog = new THREE.FogExp2(0x00021a, 0.000048);
+    this.scene.background = new THREE.Color(0x0d1526);
+    this.scene.fog = new THREE.FogExp2(0x0d1526, 0.000048);
   }
 
   /* ───────── Starfield ───────── */
@@ -34,12 +34,12 @@ export class Universe {
 
     const palette = [
       new THREE.Color(0xffffff),
-      new THREE.Color(0xb8d0ff),
-      new THREE.Color(0xfff0c8),
-      new THREE.Color(0xffd27f),
-      new THREE.Color(0xff9966),
-      new THREE.Color(0x00e5ff),
-      new THREE.Color(0xc0c0ff),
+      new THREE.Color(0xb8d0ff),   // azzurro freddo
+      new THREE.Color(0xd4b8ff),   // #563b7c derivato chiaro — viola
+      new THREE.Color(0xa8beff),   // #1f3a89 derivato chiaro — blu reale
+      new THREE.Color(0xb8d4e8),   // #155669 derivato chiaro — teal
+      new THREE.Color(0xfff0c8),   // caldo bianco
+      new THREE.Color(0xc8c0ff),   // indaco chiaro
     ];
 
     for (let i = 0; i < count; i++) {
@@ -121,18 +121,18 @@ export class Universe {
      * (disco appiattito verso la camera per massima copertura visiva).
      */
     const defs = [
-      // Teal — fronte-sinistra, in alto
-      { theta: 0.6,  phi: 1.0, r: 6200, color: 0x004d66, spreadR: 3800, spreadT: 1900 },
-      // Arancio/oro — fronte-destra, bassa
-      { theta: 2.0,  phi: 1.9, r: 7000, color: 0x5c2800, spreadR: 3500, spreadT: 1750 },
-      // Magenta/viola — dietro-sinistra
-      { theta: 3.5,  phi: 1.3, r: 5800, color: 0x3d0050, spreadR: 4200, spreadT: 2100 },
-      // Blu profondo — sopra
-      { theta: 4.8,  phi: 0.4, r: 7500, color: 0x001040, spreadR: 4500, spreadT: 2250 },
-      // Ambra rossastro — dietro-destra, bassa
-      { theta: 5.5,  phi: 2.2, r: 6500, color: 0x4a1800, spreadR: 3600, spreadT: 1800 },
-      // Verde-blu tenue — dietro al centro
-      { theta: 1.3,  phi: 0.6, r: 8000, color: 0x002e1e, spreadR: 4800, spreadT: 2400 },
+      // #563b7c viola profondo — fronte-sinistra
+      { theta: 0.6,  phi: 1.0, r: 6200, color: 0x3a2255, spreadR: 3800, spreadT: 1900 },
+      // #1f3a89 blu reale — fronte-destra, bassa
+      { theta: 2.0,  phi: 1.9, r: 7000, color: 0x162960, spreadR: 3500, spreadT: 1750 },
+      // #2b1b4d indaco scuro — dietro-sinistra
+      { theta: 3.5,  phi: 1.3, r: 5800, color: 0x1e1236, spreadR: 4200, spreadT: 2100 },
+      // #155669 teal-blu — sopra
+      { theta: 4.8,  phi: 0.4, r: 7500, color: 0x0e3d4a, spreadR: 4500, spreadT: 2250 },
+      // #563b7c viola + warmth — dietro-destra
+      { theta: 5.5,  phi: 2.2, r: 6500, color: 0x2e1a44, spreadR: 3600, spreadT: 1800 },
+      // #202a47 blu-grigio — dietro al centro
+      { theta: 1.3,  phi: 0.6, r: 8000, color: 0x141c32, spreadR: 4800, spreadT: 2400 },
     ];
 
     /*

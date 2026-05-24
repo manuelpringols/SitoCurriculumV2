@@ -154,6 +154,11 @@ class App {
 
     planet.freezeOrbit();
 
+    /* Reset scala hover — torna a 1× istantaneamente prima dello zoom */
+    planet._scaleTarget  = 1.0;
+    planet._scaleCurrent = 1.0;
+    planet.bodyGroup.scale.setScalar(1.0);
+
     this.controls.autoRotate = false;
     this.controls.update();
 
@@ -178,6 +183,7 @@ class App {
     anime({
       targets:    '#hint-block',
       opacity:    0,
+      translateX: '-50%',   /* preserva il centramento */
       translateY: 10,
       duration:   300,
       easing:     'easeInCubic',
@@ -272,6 +278,7 @@ class App {
     anime({
       targets:    '#hint-block',
       opacity:    0.85,
+      translateX: '-50%',   /* preserva il centramento */
       translateY: 0,
       duration:   800,
       delay:      400,

@@ -256,7 +256,7 @@ export class Sun {
     this.group.add(this.sunLight);
 
     /* Ambient freddo per il lato notte — accentua il contrasto caldo/freddo */
-    this.scene.add(new THREE.AmbientLight(0x0a0e28, 0.35));
+    this.scene.add(new THREE.AmbientLight(0x202a47, 0.30));
   }
 
   /* ── Update ── */
