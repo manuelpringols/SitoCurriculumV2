@@ -13,6 +13,7 @@ import { Jupiter }       from './planets/Jupiter.js';
 import { Mercury }       from './planets/Mercury.js';
 import { PostFX }        from './effects/PostFX.js';
 import { SECTIONS }      from './data.js';
+import { PANEL_DATA }    from './panelData.js';
 
 class App {
   constructor() {
@@ -24,6 +25,8 @@ class App {
     this._clock        = new THREE.Clock();
     this._lockedPlanet = null;   // pianeta su cui siamo zoomati
     this._zooming      = false;  // transizione in corso
+    this._glitch       = null;   // Glitchium instance
+    this._booting      = true;   // blocca input durante il boot
 
     this._init();
   }
@@ -36,6 +39,7 @@ class App {
     this._setupPostFX();
     this._setupInteraction();
     this._setupResize();
+    this._setupGlitch();
     this._bootSequence();
     this._loop();
   }
@@ -153,6 +157,17 @@ class App {
     this.controls.autoRotate = false;
     this.controls.update();
 
+    /* Ferma qualsiasi animazione in corso sul titolo (es. boot sequence)
+       poi lo nasconde da qualunque stato si trovi */
+    anime.remove('#title-block');
+    anime({
+      targets: '#title-block',
+      opacity:    0,
+      translateY: -20,
+      duration:   400,
+      easing:     'easeInCubic',
+    });
+
     const planetPos = planet.getWorldPosition();
     const zoomDist  = planet.radius * 4.5;
 
@@ -206,6 +221,10 @@ class App {
         this._lockedPlanet = planet;
         this._zooming      = false;
         this._showBackHint();
+
+        /* Apri pannello contenuto con leggero ritardo drammatico */
+        const k = planet.mesh.userData.sectionKey;
+        setTimeout(() => this._openPanel(k), 180);
       },
     });
   }
@@ -220,6 +239,17 @@ class App {
     this._lockedPlanet = null;
     this._hideLabel();
     this._hideBackHint();
+    this._closePanel();
+
+    /* Riporta il titolo visibile da qualunque stato */
+    anime.remove('#title-block');
+    anime({
+      targets: '#title-block',
+      opacity:    1,
+      translateY: 0,
+      duration:   700,
+      easing:     'easeOutCubic',
+    });
 
     const startCamPos = this.camera.position.clone();
     const startTarget = this.controls.target.clone();
@@ -314,6 +344,280 @@ class App {
     });
   }
 
+  /* ══════════════════════════════ GLITCHIUM ══════════════════════════ */
+
+  _setupGlitch() {
+    if (typeof Glitchium === 'undefined') return;
+    this._glitch      = new Glitchium();
+    this._bodyCtrl    = null;  // controllo #detail-body
+  }
+
+  _glitchMainPanel() { /* no-op — pannello destro non usa Glitchium */ }
+
+  /* ══════════════════════════════ SCRAMBLE TEXT ═══════════════════════ */
+
+  /*
+   * Effetto scramble testo: rivela progressivamente i caratteri reali
+   * attraverso un flusso di caratteri casuali — identico a scrambleText anime v4.
+   *
+   * el       → elemento DOM target
+   * finalText → testo finale da rivelare
+   * duration  → durata totale in ms
+   * density   → 0-1, quanto "rumore" (1 = tutto scramble, 0.3 = leggero)
+   */
+  _scramble(el, finalText, duration = 450, density = 1.0) {
+    const CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789#@!%&';
+    const FPS   = 30;
+    const steps = Math.round((duration / 1000) * FPS);
+    let   step  = 0;
+
+    const rnd = () => CHARS[Math.floor(Math.random() * CHARS.length)];
+
+    const tick = () => {
+      if (step > steps) { el.textContent = finalText; return; }
+
+      const progress = step / steps;
+      const revealed = Math.floor(progress * finalText.length);
+
+      el.textContent = finalText.split('').map((ch, i) => {
+        if (i < revealed)             return ch;            // già rivelato
+        if (ch === ' ' || ch === '') return ch;           // spazi intatti
+        if (Math.random() > density)  return ch;           // densità ridotta
+        return rnd();                                       // carattere casuale
+      }).join('');
+
+      step++;
+      setTimeout(tick, 1000 / FPS);
+    };
+
+    tick();
+  }
+
+  /*
+   * Inizializza Glitchium su #detail-body con createContainers:false.
+   * La struttura wrapper è già nel DOM (index.html) — Glitchium non tocca il DOM,
+   * applica solo CSS transforms al target. Nessun rischio per position:fixed.
+   */
+  _initBodyGlitch() {
+    if (!this._glitch || this._bodyCtrl) return;
+    try {
+      /* createContainers:true (default) — Glitchium wrappa #detail-body.
+         Il CSS in panel.css dà flex:1 al wrapper generato automaticamente. */
+      this._bodyCtrl = this._glitch.glitch('#detail-body', {
+        playMode:         'manual',
+        intensity:         0.60,
+        fps:               24,
+        layers:            6,
+        smoothTransitions: true,
+        glitchFrequency:   8,
+        shake:             false,
+        hideOverflow:      true,
+        slice: { minHeight: 0.01, maxHeight: 0.20, hueRotate: false },
+      });
+    } catch(e) { console.warn('[Glitchium body]', e); }
+  }
+
+  /*
+   * Glitch Glitchium su #detail-body — apertura pannello e cambio contenuto.
+   * createContainers:false: struttura wrapper già nel DOM (index.html).
+   */
+  _glitchDetailPanel() {
+    if (!this._glitch) return;
+    this._initBodyGlitch();
+    if (this._bodyCtrl) {
+      try {
+        this._bodyCtrl.start();
+        setTimeout(() => { try { this._bodyCtrl.stop(); } catch(e){} }, 600);
+      } catch(e) { console.warn('[Glitchium body start]', e); }
+    }
+  }
+
+  /* ══════════════════════════════ CONTENT PANEL ══════════════════════ */
+
+  _openPanel(sectionKey) {
+    const section = SECTIONS[sectionKey];
+    const data    = PANEL_DATA[sectionKey];
+    if (!section || !data) return;
+
+    const panel = document.getElementById('content-panel');
+    panel.classList.remove('hidden', 'closing');
+
+    document.getElementById('panel-planet-name').textContent =
+      (section.planet ?? '').toUpperCase();
+    document.getElementById('panel-section-title').textContent =
+      (section.title  ?? '').toUpperCase();
+
+    /* Inietta tab bar + area contenuto */
+    const body = document.getElementById('panel-body');
+    body.innerHTML = `
+      <div id="panel-tabs">
+        ${data.tabs.map((t, i) =>
+          `<button class="p-tab${i===0?' active':''}" data-tab="${i}">${t.label}</button>`
+        ).join('')}
+      </div>
+      <div class="p-content-area"></div>
+    `;
+
+    /* Mostra prima tab */
+    this._renderSubitems(body, data, 0);
+
+    /* Tab switching */
+    body.querySelectorAll('.p-tab').forEach(btn => {
+      btn.addEventListener('click', () => {
+        body.querySelectorAll('.p-tab').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        const idx = parseInt(btn.dataset.tab);
+        this._animateContent(body, () => {
+          this._renderSubitems(body, data, idx);
+          this._glitchMainPanel();
+        });
+      });
+    });
+
+    void panel.offsetWidth;
+    panel.classList.add('opening');
+
+    /* Glitch su tab e sub-item dopo apertura */
+    this._glitchMainPanel();
+  }
+
+  _renderSubitems(body, data, tabIdx) {
+    const area  = body.querySelector('.p-content-area');
+    const items = data.tabs[tabIdx].items;
+
+    area.innerHTML = items.map((item, i) => `
+      <div class="p-subitem" data-item="${i}" style="animation-delay:${i*0.06}s">
+        <span class="p-subitem-title"></span>
+        <span class="p-subitem-arrow">›</span>
+      </div>
+    `).join('');
+
+    /* Scramble staggerato sui titoli */
+    area.querySelectorAll('.p-subitem-title').forEach((el, i) => {
+      setTimeout(() => this._scramble(el, items[i].title, 360, 0.80), i * 75);
+    });
+
+    area.querySelectorAll('.p-subitem').forEach(el => {
+      el.addEventListener('click', () => {
+        const idx = parseInt(el.dataset.item);
+        this._animateContent(body,
+          () => this._renderDetail(body, data, tabIdx, items[idx]));
+      });
+    });
+  }
+
+  _renderDetail(body, data, tabIdx, item) {
+    /* Apre il pannello di dettaglio a sinistra */
+    this._openDetailPanel(item, () => {
+      /* callback back: chiude il pannello sinistro */
+      this._closeDetailPanel();
+    });
+  }
+
+  /* ── Pannello dettaglio sinistro ── */
+  _openDetailPanel(item, onBack) {
+    const panel     = document.getElementById('detail-panel');
+    const isOpen    = !panel.classList.contains('hidden');
+
+    const applyContent = () => {
+      const titleEl = document.getElementById('detail-title');
+      const bodyEl  = document.getElementById('detail-body');
+      const titleFinal = item.title.toUpperCase();
+      const bodyFinal  = item.body;
+
+      /* Ricollega back button (clone evita listener duplicati) */
+      const backBtn = document.getElementById('detail-back');
+      const newBack = backBtn.cloneNode(true);
+      backBtn.parentNode.replaceChild(newBack, backBtn);
+      newBack.addEventListener('click', onBack);
+
+      /* Scramble titolo: pieno e veloce */
+      this._scramble(titleEl, titleFinal, 420, 1.0);
+
+      /* Scramble body: densità buona, staggerato di 120ms dopo il titolo
+         così il titolo parte prima e il body segue — effetto cascata */
+      setTimeout(() => this._scramble(bodyEl, bodyFinal, 520, 0.75), 120);
+    };
+
+    if (!isOpen) {
+      /* Prima apertura: semplice fade, Glitchium è l'unica animazione */
+      panel.classList.remove('hidden', 'closing');
+      panel.style.clipPath   = 'inset(0% 0 0% 0)';
+      panel.style.opacity    = '0';
+      panel.style.transition = 'opacity 0.25s ease';
+      applyContent();
+      void panel.offsetWidth;
+      panel.style.opacity    = '1';
+      setTimeout(() => this._glitchDetailPanel(), 280);
+    } else {
+      /*
+       * Pannello già aperto: Glitchium gestisce interamente la transizione.
+       * 1. Glitchium parte → effetto glitch visibile
+       * 2. A metà glitch (200ms) → swap contenuto silenzioso
+       * 3. Glitchium continua sul nuovo contenuto → si ferma a 650ms
+       */
+      this._initBodyGlitch();
+
+      if (this._bodyCtrl) {
+        try { this._bodyCtrl.start(); } catch(e) {}
+      }
+
+      /* Swap contenuto a metà del glitch */
+      setTimeout(() => {
+        applyContent();
+        /* Scanline rapida in sincrono */
+        const scanline = document.getElementById('detail-scanline');
+        scanline.style.animation = 'none';
+        void scanline.offsetWidth;
+        scanline.style.animation = 'detail-scan 0.35s linear forwards';
+      }, 200);
+
+      /* Stop Glitchium dopo che il nuovo contenuto è stabile */
+      setTimeout(() => {
+        if (this._bodyCtrl) try { this._bodyCtrl.stop(); } catch(e) {}
+      }, 650);
+    }
+  }
+
+  _closeDetailPanel() {
+    const panel = document.getElementById('detail-panel');
+    if (panel.classList.contains('hidden')) return;
+    panel.classList.remove('opening');
+    panel.classList.add('closing');
+    setTimeout(() => {
+      panel.classList.add('hidden');
+      panel.classList.remove('closing');
+    }, 270);
+  }
+
+  /* Fade + slide mini-transition tra viste */
+  _animateContent(body, renderFn) {
+    const area = body.querySelector('.p-content-area');
+    area.style.transition = 'opacity 0.15s ease, transform 0.15s ease';
+    area.style.opacity    = '0';
+    area.style.transform  = 'translateX(8px)';
+    setTimeout(() => {
+      renderFn();
+      area.style.transform = 'translateX(-8px)';
+      requestAnimationFrame(() => {
+        area.style.opacity   = '1';
+        area.style.transform = 'translateX(0)';
+      });
+    }, 160);
+  }
+
+  _closePanel() {
+    this._closeDetailPanel();  // chiude anche il pannello sinistro
+    const panel = document.getElementById('content-panel');
+    if (panel.classList.contains('hidden')) return;
+    panel.classList.remove('opening');
+    panel.classList.add('closing');
+    setTimeout(() => {
+      panel.classList.add('hidden');
+      panel.classList.remove('closing');
+    }, 300);
+  }
+
   /* ══════════════════════════════ INTERAZIONE ═════════════════════════ */
 
   _setupInteraction() {
@@ -340,16 +644,17 @@ class App {
 
     document.getElementById('back-hint')
       ?.addEventListener('click', () => this._returnToFree());
+
+    document.getElementById('panel-close')
+      ?.addEventListener('click', () => this._returnToFree());
   }
 
   _onClick() {
-    if (this._zooming) return;
+    if (this._booting)       return;
+    if (this._zooming)       return;
 
-    /* Se già agganciati → torna libero */
-    if (this._lockedPlanet) {
-      this._returnToFree();
-      return;
-    }
+    /* In focus: click ignorato — si esce solo con ESC o tasto back */
+    if (this._lockedPlanet) return;
 
     this.raycaster.setFromCamera(this.pointer, this.camera);
     const hits = this.raycaster.intersectObjects(this.planets.map(p => p.mesh), false);
@@ -361,7 +666,7 @@ class App {
   }
 
   _checkHover() {
-    if (this._lockedPlanet || this._zooming) return;
+    if (this._booting || this._lockedPlanet || this._zooming) return;
 
     this.raycaster.setFromCamera(this.pointer, this.camera);
     const hits = this.raycaster.intersectObjects(this.planets.map(p => p.mesh), false);
@@ -384,13 +689,13 @@ class App {
     }
   }
 
-  /* Scrive nome pianeta + categoria nel label */
+  /* Nome pianeta sopra, titolo sezione sotto */
   _setLabelText(sectionKey) {
     const section = SECTIONS[sectionKey] ?? {};
     document.getElementById('planet-name').textContent =
-      (section.planet ?? sectionKey ?? '').toUpperCase();
+      (section.planet ?? '').toUpperCase();
     document.getElementById('planet-category').textContent =
-      section.title ?? '';
+      (section.title ?? '').toUpperCase();
   }
 
   /* Label in hover: posizionata sopra il pianeta */
@@ -432,9 +737,10 @@ class App {
 
   _hideLabel() {
     const el = document.getElementById('planet-label');
+    /* NON resettiamo left/top/transform — se li azzeriamo il browser
+       per un frame applica i default CSS (top:50% left:50%) prima
+       che opacity:0 faccia effetto, causando il flash al centro. */
     el.classList.add('hidden');
-    el.style.left = el.style.top = '';
-    el.style.transform = '';
   }
 
   /* ══════════════════════════════ RESIZE ═══════════════════════════════ */
@@ -458,7 +764,8 @@ class App {
       loading.classList.add('fade-out');
       setTimeout(() => {
         loading.style.display = 'none';
-        anime({ targets: '#title-block', opacity: [0, 1], translateY: [-24, 0], duration: 1700, easing: 'easeOutQuart' });
+        anime({ targets: '#title-block', opacity: [0, 1], translateY: [-24, 0], duration: 1700, easing: 'easeOutQuart',
+          complete: () => { this._booting = false; } });
         anime({ targets: '#hint-block',  opacity: [0, 0.85], duration: 2000, delay: 1100, easing: 'easeOutCubic' });
       }, 900);
     }, 1500);

@@ -17,8 +17,6 @@ export class DeviceManager {
     );
   }
 
-  /* ── Detectors ── */
-
   _detectMobile() {
     return (
       window.innerWidth < 768 ||
@@ -46,19 +44,17 @@ export class DeviceManager {
 
   _resolvePixelRatio() {
     const dpr = window.devicePixelRatio || 1;
-    // Cap: mobile ≤ 1.5×, tablet ≤ 2×, desktop ≤ 2×
     if (this.isMobile)  return Math.min(dpr, 1.5);
     if (this.isTablet)  return Math.min(dpr, 2.0);
     return Math.min(dpr, 2.0);
   }
 
-  /* ── Quality presets ── */
-
   get antialias()          { return !this.isMobile; }
   get shadowsEnabled()     { return !this.isMobile; }
 
   get starCount() {
-    return { low: 2500, medium: 6000, high: 12000 }[this.quality];
+    /* Ridotto ~20% — meno stelline sparse, le grandi brillanti rimangono */
+    return { low: 2000, medium: 4800, high: 9600 }[this.quality];
   }
 
   get nebulaParticles() {
@@ -81,13 +77,12 @@ export class DeviceManager {
     return { low: 64, medium: 96, high: 128 }[this.quality];
   }
 
-  /* Chiamato su resize */
   refresh() {
     const wasMobile = this.isMobile;
     this.isMobile   = this._detectMobile();
     this.isTablet   = this._detectTablet();
     this.quality    = this._resolveQuality();
     this.pixelRatio = this._resolvePixelRatio();
-    return wasMobile !== this.isMobile; // true se è cambiato
+    return wasMobile !== this.isMobile;
   }
 }

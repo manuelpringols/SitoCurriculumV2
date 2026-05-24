@@ -12,70 +12,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Exo+2:ital,wght@0,300;0,400;0,600;1,300&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css">
-
-  <style>
-    /* Label pianeta: posizionata via JS in screen space */
-    #planet-label {
-      position: absolute;
-      background: rgba(0, 0, 0, 0.45);
-      border: 1px solid rgba(0, 245, 255, 0.30);
-      border-radius: 6px;
-      padding: 8px 18px 10px;
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
-      transition: opacity 0.25s ease;
-      pointer-events: none;
-      white-space: nowrap;
-      text-align: center;
-      line-height: 1;
-    }
-    #planet-label.hidden { opacity: 0; pointer-events: none; }
-    #planet-name {
-      display: block;
-      font-family: var(--font-title);
-      font-size: clamp(0.65rem, 1.8vw, 0.85rem);
-      font-weight: 700;
-      color: var(--cyan);
-      letter-spacing: 0.22em;
-      text-shadow: 0 0 12px rgba(0,245,255,0.5);
-    }
-    #planet-category {
-      display: block;
-      font-family: var(--font-body);
-      font-size: clamp(0.52rem, 1.3vw, 0.68rem);
-      font-weight: 300;
-      color: rgba(232,244,248,0.65);
-      letter-spacing: 0.14em;
-      margin-top: 4px;
-      text-transform: uppercase;
-    }
-
-    /* Pulsante torna indietro */
-    #back-hint {
-      position: absolute;
-      bottom: clamp(50px, 8vw, 80px);
-      left: 50%;
-      transform: translateX(-50%);
-      background: rgba(0, 0, 0, 0.50);
-      border: 1px solid rgba(0, 245, 255, 0.22);
-      border-radius: 20px;
-      padding: 8px 24px;
-      cursor: pointer;
-      backdrop-filter: blur(8px);
-      -webkit-backdrop-filter: blur(8px);
-      transition: border-color 0.3s;
-      pointer-events: all;
-    }
-    #back-hint:hover { border-color: rgba(0, 245, 255, 0.6); }
-    #back-hint.hidden { display: none; }
-    #back-hint span {
-      font-family: 'Exo 2', sans-serif;
-      font-size: clamp(0.55rem, 1.3vw, 0.75rem);
-      color: rgba(0, 245, 255, 0.72);
-      letter-spacing: 0.14em;
-      white-space: nowrap;
-    }
-  </style>
+  <link rel="stylesheet" href="css/panel.css">
 
   <script type="importmap">
   {
@@ -85,6 +22,41 @@
     }
   }
   </script>
+  <style>
+    #planet-label {
+      position: absolute;
+      background: rgba(0, 245, 255, 0.08);
+      border: 1px solid rgba(0, 245, 255, 0.30);
+      border-radius: 4px;
+      padding: 7px 18px 9px;
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      pointer-events: none;
+      white-space: nowrap;
+      text-align: center;
+      line-height: 1;
+    }
+    #planet-label.hidden { opacity: 0; pointer-events: none; }
+    #planet-name {
+      display: block;
+      font-family: var(--font-title);
+      font-size: clamp(0.6rem, 1.4vw, 0.72rem);
+      font-weight: 700;
+      color: #4a9ec8;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+    }
+    #planet-category {
+      display: block;
+      font-family: var(--font-title);
+      font-size: clamp(0.75rem, 2vw, 0.95rem);
+      font-weight: 700;
+      color: var(--cyan);
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      margin-top: 3px;
+    }
+  </style>
 </head>
 <body>
 
@@ -95,7 +67,7 @@
 
     <div id="title-block">
       <h1 id="main-title">MANUEL CERQUA</h1>
-      <p id="main-subtitle">·&nbsp; Sviluppatore Software Junior</p>
+      <p id="main-subtitle">Operaio Specializzato CNC &nbsp;·&nbsp; Sviluppatore Software Junior</p>
     </div>
 
     <!-- Label pianeta — posizionato via JS sopra il pianeta -->
@@ -106,7 +78,7 @@
 
     <!-- Visibile solo dopo zoom su un pianeta -->
     <div id="back-hint" class="hidden">
-      <span>← &nbsp;Click o ESC per tornare</span>
+      <span>← &nbsp;ESC per tornare</span>
     </div>
 
     <div id="hint-block">
@@ -114,6 +86,39 @@
       <span class="hint-mobile">Trascina per ruotare &nbsp;·&nbsp; Pinch per zoom &nbsp;·&nbsp; Tocca un pianeta</span>
     </div>
 
+  </div>
+
+  <!-- ═══ CONTENT PANEL ═══ -->
+  <div id="content-panel" class="hidden">
+    <div id="panel-scanline"></div>
+    <div class="p-corner tl"></div>
+    <div class="p-corner tr"></div>
+    <div class="p-corner bl"></div>
+    <div class="p-corner br"></div>
+
+    <div id="panel-header">
+      <div style="flex:1; min-width:0;">
+        <div id="panel-planet-name"></div>
+        <div id="panel-section-title"></div>
+      </div>
+      <button id="panel-close" aria-label="Chiudi pannello">✕</button>
+    </div>
+
+    <div id="panel-body"></div>
+  </div>
+
+  <!-- ═══ DETAIL PANEL (sinistra) ═══ -->
+  <div id="detail-panel" class="hidden">
+    <div id="detail-scanline"></div>
+    <div class="p-corner tl"></div>
+    <div class="p-corner tr"></div>
+    <div class="p-corner bl"></div>
+    <div class="p-corner br"></div>
+    <div id="detail-header">
+      <button id="detail-back">‹ &nbsp;Indietro</button>
+      <div id="detail-title"></div>
+    </div>
+    <div id="detail-body"></div>
   </div>
 
   <!-- ═══ LOADING ═══ -->
@@ -126,6 +131,8 @@
     </div>
   </div>
 
+  <!-- Glitchium — glitch effects sulle tab -->
+  <script src="js/glitchium.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
   <script type="module" src="js/main.js"></script>
 </body>

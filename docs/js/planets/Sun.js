@@ -17,6 +17,10 @@ export class Sun {
     this.group = new THREE.Group();
     this.group.name = 'Sun';
 
+    const loader = new THREE.TextureLoader();
+    this._texSun = loader.load('./textures/2k_sun.jpg',
+      t => { t.colorSpace = THREE.SRGBColorSpace; });
+
     this._createCore();
     this._createCorona();
     this._createProminences();
@@ -30,50 +34,52 @@ export class Sun {
     const geo = new THREE.SphereGeometry(SUN_RADIUS, 96, 96);
 
     this.coreMat = new THREE.ShaderMaterial({
-      uniforms: { uTime: { value: 0 } },
+      uniforms: {
+        uTime:    { value: 0 },
+        uTexture: { value: this._texSun },
+      },
       vertexShader: /* glsl */`
         varying vec3 vNormal;
         varying vec3 vLocalPos;
+        varying vec2 vUv;
         void main() {
           vNormal   = normalize(normalMatrix * normal);
           vLocalPos = position;
+          vUv       = uv;
           gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
         }
       `,
       fragmentShader: NOISE_GLSL + /* glsl */`
-        uniform float uTime;
+        uniform float     uTime;
+        uniform sampler2D uTexture;
         varying vec3 vNormal;
         varying vec3 vLocalPos;
+        varying vec2 vUv;
 
         void main() {
-          vec3 p = normalize(vLocalPos) * 3.0;
+          /* ── Base: texture reale NASA ── */
+          vec3 col = texture2D(uTexture, vUv).rgb;
 
-          float t = uTime * 0.12;
-          float n1 = fbm(p * 1.5  + vec3( t,  t * 0.7, -t * 0.4));
-          float n2 = fbm(p * 4.0  + vec3(-t * 0.5, t * 0.9, t * 0.6) + n1 * 0.8);
-          float n3 = fbm(p * 9.0  + vec3( t * 1.2, -t * 0.5, t * 0.8));
-          float plasma = n1 * 0.5 + n2 * 0.35 + n3 * 0.15;
+          /* ── Plasma: modula SOLO la luminosità, non il colore ──
+             Aggiunge convezione e vita senza alterare i colori reali */
+          vec3 p  = normalize(vLocalPos) * 3.0;
+          float t = uTime * 0.10;
+          float n1 = fbm(p * 1.5 + vec3( t,  t * 0.7, -t * 0.4));
+          float n2 = fbm(p * 4.0 + vec3(-t * 0.5, t * 0.9, t * 0.6) + n1 * 0.6);
+          float plasma = n1 * 0.55 + n2 * 0.30 + ridgedFbm(p * 14.0 + uTime * 0.08) * 0.10;
 
-          float granul = ridgedFbm(p * 18.0 + uTime * 0.1) * 0.15;
-          plasma += granul;
+          /* Modulazione luminosità: ±15% — texture visibile al 100% */
+          float brightness = 0.88 + plasma * 0.24;
+          col *= brightness;
 
-          float spots = smoothstep(0.85, 1.0, ridgedFbm(p * 2.0));
-          plasma *= 1.0 - spots * 0.7;
+          /* Macchie solari: scuriscono la texture senza cambiarla */
+          float spots = smoothstep(0.88, 1.0, ridgedFbm(p * 2.0));
+          col *= 1.0 - spots * 0.72;
 
-          vec3 cWhite  = vec3(1.00, 0.98, 0.75);
-          vec3 cYellow = vec3(1.00, 0.78, 0.20);
-          vec3 cOrange = vec3(1.00, 0.45, 0.05);
-          vec3 cRed    = vec3(0.85, 0.10, 0.00);
-
-          vec3 col = mix(cWhite, cYellow, smoothstep(0.0, 0.4, plasma));
-          col      = mix(col,    cOrange, smoothstep(0.4, 0.7, plasma));
-          col      = mix(col,    cRed,    smoothstep(0.8, 1.0, plasma));
-
-          col = mix(col, vec3(0.25, 0.10, 0.0), spots * 0.85);
-
+          /* Limb darkening reale del sole */
           float NdotV = abs(dot(vNormal, vec3(0.0, 0.0, 1.0)));
-          float limb  = pow(NdotV, 0.6);
-          col = mix(cRed * 0.55, col, limb);
+          float limb  = pow(NdotV, 0.55);
+          col = mix(col * 0.38, col, limb);
 
           gl_FragColor = vec4(col, 1.0);
         }
@@ -209,7 +215,10 @@ export class Sun {
     geo.setAttribute('psize',    new THREE.BufferAttribute(sizes, 1));
 
     const mat = new THREE.ShaderMaterial({
-      uniforms: { uTime: { value: 0 } },
+      uniforms: {
+        uTime:    { value: 0 },
+        uTexture: { value: this._texSun },
+      },
       vertexShader: /* glsl */`
         attribute float speed;
         attribute float psize;
