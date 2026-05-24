@@ -1,18 +1,14 @@
 /**
  * data.js — Unica fonte di verità per i contenuti del portfolio.
- * Aggiorna solo questo file per modificare i tuoi dati.
  */
 
 export const ME = {
   nome:     'Manuel Cerqua',
-  titolo:   'Sviluppatore Software Junior',
-  linkedin: 'https://www.linkedin.com/in/manuelpringols', // aggiorna con il tuo URL esatto
+  titolo:   'Junior Software Developer',
+  email:    'manuelpringols@gmail.com',
+  linkedin: 'https://www.linkedin.com/in/manuelpringols',
   website:  'https://manuelpringols.info',
 };
-
-/* ─────────────────────────────────────────────────
-   SEZIONI — corrispondono ai pianeti
-───────────────────────────────────────────────── */
 
 export const SECTIONS = {
 
@@ -20,11 +16,11 @@ export const SECTIONS = {
     title:    'Chi Sono',
     planet:   'Earth',
     icon:     '🌍',
-    content: `Sono un professionista giovane e motivato con esperienza nel settore
-industriale e una forte passione per la tecnologia e lo sviluppo software.
-Dedico grande attenzione al lavoro, mantenendo un approccio positivo anche
-sotto pressione. Mi impegno a migliorarmi continuamente, acquisendo nuove
-competenze e affrontando nuove sfide.`,
+    content: `Sono Manuel Cerqua, sviluppatore con cinque anni di studio autonomo
+su documentazione ufficiale e libri tecnici. La passione per questo
+mondo è nata in adolescenza — ma le risorse e la motivazione giusta
+sono arrivate più tardi. Oggi lavoro come Junior Software Developer
+in consulenza, con un occhio sempre puntato verso la cybersecurity.`,
   },
 
   esperienze: {
@@ -33,13 +29,24 @@ competenze e affrontando nuove sfide.`,
     icon:   '🔴',
     items: [
       {
+        ruolo:   'Junior Software Developer',
+        azienda: 'Convergr (in consulenza per Accenture)',
+        luogo:   'Italia',
+        periodo: '2024 – presente',
+        punti: [
+          'Sviluppo e implementazione di workflow, workspace e logiche complesse su piattaforma ServiceNow.',
+          'Porting di applicazioni esistenti su ServiceNow con aumento della robustezza e manutenibilità.',
+          'Call e confronti diretti con il cliente e team funzionali fin dal primo giorno.',
+        ],
+      },
+      {
         ruolo:   'Operaio Specializzato CNC',
         azienda: 'Acciai Inox Srl',
         luogo:   'Giugliano (NA)',
-        periodo: '2019 – presente',
+        periodo: '2019 – 2024',
         punti: [
           'Programmazione e utilizzo di macchine CNC per la lavorazione dell\'acciaio inox.',
-          'Ottimizzazione dei processi produttivi attraverso il lavoro di squadra.',
+          'Lettura di disegni tecnici, controllo qualità e gestione del ciclo produttivo completo.',
         ],
       },
     ],
@@ -51,16 +58,28 @@ competenze e affrontando nuove sfide.`,
     icon:   '🪐',
     items: [
       {
-        titolo:    'Diploma di Perito Industriale',
-        istituto:  'ITS Galvani',
-        luogo:     'Giugliano (NA)',
-        periodo:   '2015 – 2020',
+        titolo:   'Diploma di Perito Industriale',
+        istituto: 'ITS Galvani',
+        luogo:    'Giugliano (NA)',
+        periodo:  '2015 – 2020',
       },
       {
-        titolo:    'Certificazione Java Oracle',
-        istituto:  'Java Foundations Associate',
-        luogo:     '',
-        periodo:   '',
+        titolo:   'Java Foundations Associate',
+        istituto: 'Oracle Certified',
+        luogo:    '',
+        periodo:  '',
+      },
+      {
+        titolo:   'Corsi completati: Spring Boot, Angular',
+        istituto: 'Udemy',
+        luogo:    '',
+        periodo:  '',
+      },
+      {
+        titolo:   'eJPT — in preparazione',
+        istituto: 'eLearnSecurity / INE',
+        luogo:    '',
+        periodo:  'obiettivo prossimo',
       },
     ],
   },
@@ -71,33 +90,33 @@ competenze e affrontando nuove sfide.`,
     icon:   '🔵',
     gruppi: [
       { label: 'Linguaggi',       items: ['Java', 'JavaScript', 'SQL', 'HTML', 'CSS'] },
-      { label: 'Framework',       items: ['Spring Boot', 'Angular'] },
+      { label: 'Framework',       items: ['Spring Boot', 'Spring Security', 'ServiceNow'] },
       { label: 'Database',        items: ['MySQL', 'PostgreSQL'] },
-      { label: 'Versionamento',   items: ['Git'] },
-      { label: 'Build & Package', items: ['Maven', 'Npm'] },
+      { label: 'DevOps & Tools',  items: ['Docker', 'Nginx', 'Git', 'Linux', 'WireGuard'] },
+      { label: 'Build',           items: ['Maven', 'npm'] },
     ],
   },
 
   devops: {
-    title:  'DevOps & Backend',
+    title:  'Infra & Progetti',
     planet: 'Jupiter',
     icon:   '🟠',
     items: [
       {
-        titolo: 'Containerizzazione Docker',
-        desc:   'Creazione, configurazione e gestione di container Docker per sviluppo e produzione.',
+        titolo: 'VPS — Hetzner & Netcup',
+        desc:   'Contratti VPS scelti in base al rapporto risorse/prezzo. Hosting di applicazioni e servizi tramite Docker Compose, routing con Nginx.',
       },
       {
-        titolo: 'Deploy su Hetzner VPS',
-        desc:   'Gestione infrastruttura e deployment via Docker Compose su server dedicati.',
+        titolo: 'WireGuard VPN',
+        desc:   'VPN configurata su server personale per mettere tutti i dispositivi di casa sulla stessa rete virtuale, raggiungibili da remoto senza aprire porte sul router.',
       },
       {
-        titolo: 'API REST con Spring Boot',
-        desc:   'Sviluppo e gestione di REST API, Spring Security (autenticazione/autorizzazione), Spring Data JPA.',
+        titolo: 'Marmitta',
+        desc:   'Tool personale che sfrutta curl con il flag per l\'esecuzione remota di codice bash. Progetto sperimentale su automazione e controllo remoto.',
       },
       {
-        titolo: 'Sistemi Operativi',
-        desc:   'Linux — gestione server, deploy applicazioni, configurazioni di base.',
+        titolo: 'Jellyfin & altri servizi',
+        desc:   'Server multimediale self-hosted su VPS. Uno dei tanti progetti che hanno fatto da palestra per Linux, Docker e configurazione di rete.',
       },
     ],
   },
@@ -107,8 +126,8 @@ competenze e affrontando nuove sfide.`,
     planet: 'Mercury',
     icon:   '☿',
     links: [
+      { label: 'Email',    url: 'mailto:manuelpringols@gmail.com',          icon: '📧' },
       { label: 'LinkedIn', url: 'https://www.linkedin.com/in/manuelpringols', icon: '💼' },
-      { label: 'Portfolio', url: 'https://manuelpringols.info', icon: '🌐' },
     ],
   },
 

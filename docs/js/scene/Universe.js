@@ -3,11 +3,17 @@ import * as THREE from 'three';
 /**
  * Universe — sfondo cosmico.
  *
- * Nebulose v3 — lightweight + distribuzione sferica.
- * 6 nebulose × 280 particelle = 1680 totali (era 31.000+).
- * Centri posizionati su una sfera attorno alla scena →
- * colori distribuiti in tutto il cielo, non in un angolo.
- * Particelle grandi (120-260) con gaussian morbido → effetto gas.
+ * FIX flickering definitivo (già risolto in precedenza, riapplicato):
+ *
+ * CAUSA REALE: gl_PointSize sub-pixel. Quando una stella scende sotto
+ * 1px WebGL la fa sparire/riapparire ogni frame al variare della camera.
+ * Il blink sull'alpha amplifica questo visivamente.
+ *
+ * SOLUZIONE:
+ *  1. Blink agisce SOLO su vAlpha — mai su gl_PointSize
+ *  2. Floor alzato a 3.0px — nessuna stella va mai sotto soglia
+ *  3. Frequenze ultralente (0.025 / 0.038 rad/s = cicli 40-70s)
+ *  4. Ampiezza quasi zero (±0.015) — stelle "respirano" impercettibilmente
  */
 export class Universe {
   constructor(scene, device) {
@@ -34,12 +40,12 @@ export class Universe {
 
     const palette = [
       new THREE.Color(0xffffff),
-      new THREE.Color(0xb8d0ff),   // azzurro freddo
-      new THREE.Color(0xd4b8ff),   // #563b7c derivato chiaro — viola
-      new THREE.Color(0xa8beff),   // #1f3a89 derivato chiaro — blu reale
-      new THREE.Color(0xb8d4e8),   // #155669 derivato chiaro — teal
-      new THREE.Color(0xfff0c8),   // caldo bianco
-      new THREE.Color(0xc8c0ff),   // indaco chiaro
+      new THREE.Color(0xb8d0ff),
+      new THREE.Color(0xd4b8ff),
+      new THREE.Color(0xa8beff),
+      new THREE.Color(0xb8d4e8),
+      new THREE.Color(0xfff0c8),
+      new THREE.Color(0xc8c0ff),
     ];
 
     for (let i = 0; i < count; i++) {
@@ -71,30 +77,52 @@ export class Universe {
         varying vec3  vColor;
         varying float vAlpha;
         uniform float uTime;
+
         void main() {
           vColor = aColor;
 
-          float s1 = sin(uTime * 0.10 + aPhase);
-          float s2 = sin(uTime * 0.16 + aPhase * 1.618);
-          float blink = 0.92 + s1 * 0.04 + s2 * 0.04;
+          /*
+           * BLINK → solo alpha, MAI sulla dimensione.
+           * Frequenze ultralente: 0.025 rad/s = periodo ~250s
+           *                       0.038 rad/s = periodo ~165s
+           * Ampiezza ±0.015 → range 0.97–1.0, praticamente invisibile.
+           * Stelle grandi (aSize > 2.5) ancora più stabili: amp ±0.008.
+           */
+          float big  = step(2.5, aSize);
+          float amp  = mix(0.015, 0.008, big);
+          float f1   = mix(0.025, 0.015, big);
+          float f2   = mix(0.038, 0.022, big);
+
+          float s1   = sin(uTime * f1 + aPhase);
+          float s2   = sin(uTime * f2 + aPhase * 1.618);
+          float blink = 0.97 + s1 * amp + s2 * amp;
           vAlpha = clamp(blink, 0.0, 1.0);
 
+          /*
+           * DIMENSIONE → solo distanza, blink non la tocca mai.
+           * Floor 3.0px: nessuna stella scende sotto soglia sub-pixel.
+           * Sotto 1px WebGL fa sparire/riapparire il punto ogni frame
+           * al minimo movimento della camera → questo era il flickering.
+           */
           vec4 mv = modelViewMatrix * vec4(position, 1.0);
           float size = aSize * (1200.0 / -mv.z);
-          gl_PointSize = max(size, 1.8);
+          gl_PointSize = max(size, 3.0);
+
           gl_Position = projectionMatrix * mv;
         }
       `,
       fragmentShader: /* glsl */`
         varying vec3  vColor;
         varying float vAlpha;
+
         void main() {
           vec2 uv = gl_PointCoord - 0.5;
           float d = length(uv);
           if (d > 0.5) discard;
-          float core  = 1.0 - smoothstep(0.05, 0.45, d);
-          float flare = max(0.0, 1.0 - abs(uv.x) * 7.0) * max(0.0, 1.0 - abs(uv.y) * 7.0);
-          float a = max(core, flare * 0.5) * vAlpha;
+          float core  = 1.0 - smoothstep(0.0, 0.5, d);
+          float flare = max(0.0, 1.0 - abs(uv.x) * 7.0)
+                      * max(0.0, 1.0 - abs(uv.y) * 7.0);
+          float a = max(core, flare * 0.45) * vAlpha;
           gl_FragColor = vec4(vColor, a);
         }
       `,
@@ -108,42 +136,22 @@ export class Universe {
     this.scene.add(this.stars);
   }
 
-  /* ───────── Nebulose — gas distribuito su tutta la sfera ───────── */
+  /* ───────── Nebulose ───────── */
   _createNebulae() {
     this.nebulaGroup = new THREE.Group();
 
-    /*
-     * 6 nebulose posizionate su angoli ben distribuiti della sfera celeste.
-     * theta = longitudine (0 → 2π), phi = latitudine (0 → π).
-     * r = distanza dal centro (ben oltre i pianeti, max orb ~500).
-     *
-     * Spread ellittico: spreadR grande (nuvola larga), spreadT più compatto
-     * (disco appiattito verso la camera per massima copertura visiva).
-     */
     const defs = [
-      // #563b7c viola profondo — fronte-sinistra
       { theta: 0.6,  phi: 1.0, r: 6200, color: 0x3a2255, spreadR: 3800, spreadT: 1900 },
-      // #1f3a89 blu reale — fronte-destra, bassa
       { theta: 2.0,  phi: 1.9, r: 7000, color: 0x162960, spreadR: 3500, spreadT: 1750 },
-      // #2b1b4d indaco scuro — dietro-sinistra
       { theta: 3.5,  phi: 1.3, r: 5800, color: 0x1e1236, spreadR: 4200, spreadT: 2100 },
-      // #155669 teal-blu — sopra
       { theta: 4.8,  phi: 0.4, r: 7500, color: 0x0e3d4a, spreadR: 4500, spreadT: 2250 },
-      // #563b7c viola + warmth — dietro-destra
       { theta: 5.5,  phi: 2.2, r: 6500, color: 0x2e1a44, spreadR: 3600, spreadT: 1800 },
-      // #202a47 blu-grigio — dietro al centro
       { theta: 1.3,  phi: 0.6, r: 8000, color: 0x141c32, spreadR: 4800, spreadT: 2400 },
     ];
 
-    /*
-     * Particelle per nebulosa: fisse a 280 indipendentemente dalla qualità.
-     * Il look viene dalla dimensione delle particelle, non dalla quantità.
-     * Totale: 6 × 280 = 1680 particelle (era 31.000+).
-     */
     const PER_NEBULA = this.device.isMobile ? 160 : 280;
 
     defs.forEach(({ theta, phi, r, color, spreadR, spreadT }) => {
-      // Centro nebulosa su sfera
       const cx = r * Math.sin(phi) * Math.cos(theta);
       const cy = r * Math.cos(phi);
       const cz = r * Math.sin(phi) * Math.sin(theta);
@@ -154,21 +162,13 @@ export class Universe {
 
       for (let i = 0; i < PER_NEBULA; i++) {
         const i3 = i * 3;
-
-        // Distribuzione gaussiana: media 4 campioni → campana morbida
         const gx = (Math.random() + Math.random() + Math.random() + Math.random() - 2.0) / 2.0;
         const gy = (Math.random() + Math.random() + Math.random() + Math.random() - 2.0) / 2.0;
         const gz = (Math.random() + Math.random() + Math.random() + Math.random() - 2.0) / 2.0;
-
-        // spread radiale grande, tangenziale più compatto → disco
         positions[i3]     = cx + gx * spreadR;
         positions[i3 + 1] = cy + gy * spreadT;
         positions[i3 + 2] = cz + gz * spreadR;
-
-        // Alpha molto bassa: l'effetto gas emerge dalla sovrapposizione additiva
         alphas[i] = 0.030 + Math.random() * 0.048;
-
-        // Particelle grandi con falloff gaussiano = nuvola morbida
         psizes[i] = 320 + Math.random() * 320;
       }
 
@@ -198,7 +198,6 @@ export class Universe {
             vec2 uv = gl_PointCoord - 0.5;
             float d = length(uv) * 2.0;
             if (d > 1.0) discard;
-            /* Gaussian morbidissimo — zero bordi visibili */
             float gauss = exp(-d * d * 2.5);
             gl_FragColor = vec4(uColor, gauss * vA);
           }

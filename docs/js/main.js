@@ -49,7 +49,6 @@ class App {
 
   /* ══════════════════════════════ RENDERER ═══════════════════════════ */
   _setupRenderer() {
-    /* Cursore custom non ha senso su touch — nascondilo subito */
     if (this.device.isMobile) {
       const cur = document.getElementById('cursor');
       if (cur) cur.style.display = 'none';
@@ -154,7 +153,6 @@ class App {
 
     planet.freezeOrbit();
 
-    /* Reset scala hover — torna a 1× istantaneamente prima dello zoom */
     planet._scaleTarget  = 1.0;
     planet._scaleCurrent = 1.0;
     planet.bodyGroup.scale.setScalar(1.0);
@@ -162,7 +160,6 @@ class App {
     this.controls.autoRotate = false;
     this.controls.update();
 
-    /* Nascondi titolo — cancella eventuali animazioni in corso (es. boot) */
     anime.remove('#title-block');
     anime({
       targets:    '#title-block',
@@ -172,18 +169,11 @@ class App {
       easing:     'easeInCubic',
     });
 
-    /*
-     * Nascondi hint-block:
-     *  - anime.remove() cancella anche il boot-delay (1100ms) ancora in coda,
-     *    evitando che l'animazione spari durante il focus-mode
-     *  - translateY:10 → scivola giù, coerente con l'uscita dal basso
-     *  - pointerEvents none nel complete per sicurezza
-     */
     anime.remove('#hint-block');
     anime({
       targets:    '#hint-block',
       opacity:    0,
-      translateX: '-50%',   /* preserva il centramento */
+      translateX: '-50%',
       translateY: 10,
       duration:   300,
       easing:     'easeInCubic',
@@ -256,7 +246,6 @@ class App {
     this._hideBackHint();
     this._closePanel();
 
-    /* Ripristina titolo da qualunque stato */
     anime.remove('#title-block');
     anime({
       targets:    '#title-block',
@@ -266,19 +255,13 @@ class App {
       easing:     'easeOutCubic',
     });
 
-    /*
-     * Ripristina hint-block:
-     *  - delay 400ms: aspetta che il content-panel finisca di chiudersi
-     *    (chiusura ~300ms) prima di far riapparire il hint in basso
-     *  - pointerEvents ripristinati prima dell'animazione
-     */
     anime.remove('#hint-block');
     const hintEl = document.getElementById('hint-block');
     if (hintEl) hintEl.style.pointerEvents = '';
     anime({
       targets:    '#hint-block',
       opacity:    0.85,
-      translateX: '-50%',   /* preserva il centramento */
+      translateX: '-50%',
       translateY: 0,
       duration:   800,
       delay:      400,
@@ -446,8 +429,8 @@ class App {
 
     const panel = document.getElementById('content-panel');
     panel.classList.remove('hidden', 'closing', 'nav-hidden');
-    panel.style.opacity = '';  /* reset inline opacity da anime.js */
-    panel.style.transform = '';  /* reset inline transform da anime.js */
+    panel.style.opacity = '';
+    panel.style.transform = '';
 
     document.getElementById('panel-planet-name').textContent =
       (section.planet ?? '').toUpperCase();
@@ -533,13 +516,8 @@ class App {
       setTimeout(() => this._scramble(bodyEl, item.body, 520, 0.75), 130);
     };
 
-    /*
-     * Logica di apertura effettiva — chiamata DOPO che il nav è chiuso
-     * (su mobile) oppure direttamente (su desktop, i due pannelli coesistono).
-     */
     const openDetail = () => {
       if (!isOpen) {
-        /* Prima apertura: semplice fade-in + scramble */
         panel.classList.remove('hidden', 'closing');
         panel.style.clipPath   = 'inset(0% 0 0% 0)';
         panel.style.opacity    = '0';
@@ -552,7 +530,6 @@ class App {
         setTimeout(doScramble, 270);
 
       } else {
-        /* Pannello già aperto: glitch → svuota → scramble nuovo contenuto */
         this._initBodyGlitch();
         if (this._bodyCtrl) try { this._bodyCtrl.start(); } catch(e) {}
 
@@ -574,15 +551,10 @@ class App {
     };
 
     if (this.device.isMobile) {
-      /*
-       * Mobile: chiudi prima il nav completamente,
-       * poi apri il detail nel complete callback — nessun taglio, nessun overlap.
-       */
       const nav = document.getElementById('content-panel');
       const alreadyHidden = !nav || nav.classList.contains('nav-hidden');
 
       if (!alreadyHidden) {
-        /* Nascondi titolo e nav in parallelo — partono insieme */
         anime.remove('#title-block');
         anime({
           targets:    '#title-block',
@@ -602,7 +574,7 @@ class App {
           complete: () => {
             nav.style.pointerEvents = 'none';
             nav.classList.add('nav-hidden');
-            openDetail();   // ← apre SOLO dopo che nav è sparito
+            openDetail();
           },
         });
       } else {
@@ -610,7 +582,6 @@ class App {
       }
 
     } else {
-      /* Desktop: i due pannelli coesistono, apri subito */
       openDetail();
     }
   }
@@ -630,7 +601,6 @@ class App {
       if (!nav) return;
       nav.classList.remove('nav-hidden');
       nav.style.pointerEvents = '';
-      /* Stato iniziale sicuro prima di animare */
       nav.style.opacity = '0';
       nav.style.transform = 'translateY(18px)';
       anime.remove(nav);
@@ -664,7 +634,6 @@ class App {
     this._closeDetailPanel(false);
     const panel = document.getElementById('content-panel');
     if (panel.classList.contains('hidden')) return;
-    /* Rimuovi nav-hidden per garantire visibilità alla prossima apertura */
     panel.classList.remove('nav-hidden');
     panel.style.opacity = '';
     panel.style.transform = '';
@@ -843,12 +812,24 @@ class App {
 
     el.style.transform = `translate(${this._mouseX}px, ${this._mouseY}px)`;
 
-    const projected = new THREE.Vector3(0,0,0).project(this.camera);
+    // ✅ FIX 2: in focus mode (pianeta bloccato o zoom in corso)
+    // il cursore fuoco non deve mai attivarsi — reset immediato e uscita.
+    if (this._lockedPlanet || this._zooming) {
+      el.classList.remove('on-sun', 'on-planet');
+      return;
+    }
+
+    // ── Rilevamento sole: proietta il SOLO coreMesh (raggio R=200) ──
+    // Proiettiamo il centro del sole e un punto a +200 unità sull'asse X.
+    // Questo corrisponde esattamente al raggio del coreMesh, escludendo
+    // le billboard della corona (che arrivano fino a R*22 = 4400).
+    // ✅ FIX 1: rimossa la moltiplicazione * 1.3 e usato R=200 (solo core).
+    const projected = new THREE.Vector3(0, 0, 0).project(this.camera);
     const sx = ( projected.x * 0.5 + 0.5) * window.innerWidth;
     const sy = (-projected.y * 0.5 + 0.5) * window.innerHeight;
-    const edgePx = new THREE.Vector3(470,0,0).project(this.camera);
+    const edgePx = new THREE.Vector3(200, 0, 0).project(this.camera);
     const ex  = ( edgePx.x * 0.5 + 0.5) * window.innerWidth;
-    const sunR = Math.abs(ex - sx) * 1.3;
+    const sunR = Math.abs(ex - sx); // nessun moltiplicatore — solo il core
     const onSun = Math.hypot(this._mouseX - sx, this._mouseY - sy) < sunR;
 
     const onPlanet = !onSun && this._hovered !== null;
