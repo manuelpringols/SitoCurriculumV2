@@ -118,11 +118,13 @@ html, body {
   position: absolute;
   bottom: clamp(14px, 4vw, 30px);
   left: 50%;
-  transform: translateX(-50%);
+  transform: translateX(-50%) translateY(0px);
   text-align: center;
   opacity: 0;
   width: 90%;
+  will-change: opacity, transform;
 }
+
 
 #hint-block span {
   font-family: var(--font-body);

@@ -23,13 +23,13 @@ class App {
     this.pointer       = new THREE.Vector2(-10, -10);
     this._hovered      = null;
     this._clock        = new THREE.Clock();
-    this._lockedPlanet = null;   // pianeta su cui siamo zoomati
-    this._zooming      = false;  // transizione in corso
-    this._glitch       = null;   // Glitchium instance
-    this._booting      = true;   // blocca input durante il boot
-    this._mouseX       = 0;      // pixel X mouse
-    this._mouseY       = 0;      // pixel Y mouse
-    this._onSun        = false;  // cursore sul sole
+    this._lockedPlanet = null;
+    this._zooming      = false;
+    this._glitch       = null;
+    this._booting      = true;
+    this._mouseX       = 0;
+    this._mouseY       = 0;
+    this._onSun        = false;
 
     this._init();
   }
@@ -49,6 +49,12 @@ class App {
 
   /* ══════════════════════════════ RENDERER ═══════════════════════════ */
   _setupRenderer() {
+    /* Cursore custom non ha senso su touch — nascondilo subito */
+    if (this.device.isMobile) {
+      const cur = document.getElementById('cursor');
+      if (cur) cur.style.display = 'none';
+    }
+
     const canvas = document.getElementById('canvas');
     this.renderer = new THREE.WebGLRenderer({
       canvas,
@@ -59,7 +65,7 @@ class App {
     this.renderer.setSize(window.innerWidth, window.innerHeight);
     this.renderer.outputColorSpace    = THREE.SRGBColorSpace;
     this.renderer.toneMapping         = THREE.ACESFilmicToneMapping;
-    this.renderer.toneMappingExposure = 0.85;
+    this.renderer.toneMappingExposure = 0.60;
     this.renderer.shadowMap.enabled   = false;
   }
 
@@ -67,9 +73,9 @@ class App {
   _setupCamera() {
     const fov = this.device.isMobile ? 72 : 56;
     this.camera = new THREE.PerspectiveCamera(
-      fov, window.innerWidth / window.innerHeight, 0.1, 12000
+      fov, window.innerWidth / window.innerHeight, 0.1, 30000
     );
-    this.camera.position.set(0, 120, this.device.isMobile ? 520 : 420);
+    this.camera.position.set(0, 300, this.device.isMobile ? 1670 : 1340);
   }
 
   _setupControls() {
@@ -77,7 +83,7 @@ class App {
     this.controls.enableDamping      = true;
     this.controls.dampingFactor      = 0.055;
     this.controls.minDistance        = this.device.isMobile ? 60 : 50;
-    this.controls.maxDistance      = this.device.isMobile ? 1050 : 1150;
+    this.controls.maxDistance        = this.device.isMobile ? 3200 : 3800;
     this.controls.autoRotate         = true;
     this.controls.autoRotateSpeed    = 0.15;
     this.controls.enablePan          = true;
@@ -102,25 +108,19 @@ class App {
   }
 
   _spawnPlanets() {
-    /*
-     * Orbite allargate per uno zoom drammatico e leggibile.
-     * Gap verificati: ogni distanza > r_eff_A + r_B + 28 (margine).
-     *   Earth  orbit=160   Mars  orbit=268   Saturn orbit=410
-     *   Neptune orbit=554  Jupiter orbit=672  Mercury orbit=782
-     */
     const defs = [
       { Class: Earth,   key: 'chisono',    name: SECTIONS.chisono.title,
-        radius: 14, orbitRadius: 160,  orbitSpeed: 0.28, rotSpeed: 0.40, inclination: 0.04 },
+        radius: 36, orbitRadius: 510,  orbitSpeed: 0.28, rotSpeed: 0.40, inclination: 0.04 },
       { Class: Mars,    key: 'esperienze', name: SECTIONS.esperienze.title,
-        radius: 16, orbitRadius: 268,  orbitSpeed: 0.20, rotSpeed: 0.45, inclination: 0.07 },
+        radius: 40, orbitRadius: 660,  orbitSpeed: 0.20, rotSpeed: 0.45, inclination: 0.07 },
       { Class: Saturn,  key: 'istruzione', name: SECTIONS.istruzione.title,
-        radius: 20, orbitRadius: 410,  orbitSpeed: 0.14, rotSpeed: 0.38, inclination: 0.03 },
+        radius: 52, orbitRadius: 900,  orbitSpeed: 0.14, rotSpeed: 0.38, inclination: 0.03 },
       { Class: Neptune, key: 'competenze', name: SECTIONS.competenze.title,
-        radius: 18, orbitRadius: 554,  orbitSpeed: 0.09, rotSpeed: 0.42, inclination: 0.05 },
+        radius: 46, orbitRadius: 1150, orbitSpeed: 0.09, rotSpeed: 0.42, inclination: 0.05 },
       { Class: Jupiter, key: 'devops',     name: SECTIONS.devops.title,
-        radius: 22, orbitRadius: 672,  orbitSpeed: 0.065, rotSpeed: 0.55, inclination: 0.03 },
+        radius: 56, orbitRadius: 1330, orbitSpeed: 0.065, rotSpeed: 0.55, inclination: 0.03 },
       { Class: Mercury, key: 'contatti',   name: SECTIONS.contatti.title,
-        radius: 10, orbitRadius: 782,  orbitSpeed: 0.045, rotSpeed: 0.30, inclination: 0.02 },
+        radius: 26, orbitRadius: 1490, orbitSpeed: 0.045, rotSpeed: 0.30, inclination: 0.02 },
     ];
 
     defs.forEach((def, i) => {
@@ -152,29 +152,44 @@ class App {
     this.controls.autoRotate = false;
     this._hideLabel();
 
-    /* Blocca l'orbita subito — posizione fissa per tutta la transizione */
     planet.freezeOrbit();
 
-    /* Drena la velocità accumulata da autoRotate in OrbitControls
-       chiamando update() una volta prima di disabilitarlo */
     this.controls.autoRotate = false;
     this.controls.update();
 
-    /* Ferma qualsiasi animazione in corso sul titolo (es. boot sequence)
-       poi lo nasconde da qualunque stato si trovi */
+    /* Nascondi titolo — cancella eventuali animazioni in corso (es. boot) */
     anime.remove('#title-block');
     anime({
-      targets: '#title-block',
+      targets:    '#title-block',
       opacity:    0,
       translateY: -20,
       duration:   400,
       easing:     'easeInCubic',
     });
 
+    /*
+     * Nascondi hint-block:
+     *  - anime.remove() cancella anche il boot-delay (1100ms) ancora in coda,
+     *    evitando che l'animazione spari durante il focus-mode
+     *  - translateY:10 → scivola giù, coerente con l'uscita dal basso
+     *  - pointerEvents none nel complete per sicurezza
+     */
+    anime.remove('#hint-block');
+    anime({
+      targets:    '#hint-block',
+      opacity:    0,
+      translateY: 10,
+      duration:   300,
+      easing:     'easeInCubic',
+      complete: () => {
+        const h = document.getElementById('hint-block');
+        if (h) h.style.pointerEvents = 'none';
+      },
+    });
+
     const planetPos = planet.getWorldPosition();
     const zoomDist  = planet.radius * 4.5;
 
-    /* Direzione attuale camera → pianeta per mantenere l'angolo di vista */
     const dir = new THREE.Vector3()
       .subVectors(this.camera.position, planetPos)
       .normalize();
@@ -183,12 +198,6 @@ class App {
       .copy(planetPos)
       .addScaledVector(dir, zoomDist);
 
-    /*
-     * Interpoliamo manualmente con proxy plain objects.
-     * Il callback update() aggiorna camera.position E camera.lookAt()
-     * ogni frame — controls.update() è skippato durante lo zoom
-     * per evitare che ricalcoli la camera sul target (0,0,0).
-     */
     const camProxy = {
       x: this.camera.position.x,
       y: this.camera.position.y,
@@ -217,7 +226,6 @@ class App {
       easing: 'easeInOutQuart',
       update: () => {
         this.controls.target.set(tgtProxy.x, tgtProxy.y, tgtProxy.z);
-        /* Forziamo la camera a guardare il pianeta ad ogni frame */
         this.camera.lookAt(tgtProxy.x, tgtProxy.y, tgtProxy.z);
       },
       complete: () => {
@@ -225,7 +233,6 @@ class App {
         this._zooming      = false;
         this._showBackHint();
 
-        /* Apri pannello contenuto con leggero ritardo drammatico */
         const k = planet.mesh.userData.sectionKey;
         setTimeout(() => this._openPanel(k), 180);
       },
@@ -236,7 +243,6 @@ class App {
     if (this._zooming) return;
     this._zooming = true;
 
-    /* Riprende l'orbita dal punto in cui era stata fermata */
     if (this._lockedPlanet) this._lockedPlanet.unfreezeOrbit();
 
     this._lockedPlanet = null;
@@ -244,19 +250,37 @@ class App {
     this._hideBackHint();
     this._closePanel();
 
-    /* Riporta il titolo visibile da qualunque stato */
+    /* Ripristina titolo da qualunque stato */
     anime.remove('#title-block');
     anime({
-      targets: '#title-block',
+      targets:    '#title-block',
       opacity:    1,
       translateY: 0,
       duration:   700,
       easing:     'easeOutCubic',
     });
 
+    /*
+     * Ripristina hint-block:
+     *  - delay 400ms: aspetta che il content-panel finisca di chiudersi
+     *    (chiusura ~300ms) prima di far riapparire il hint in basso
+     *  - pointerEvents ripristinati prima dell'animazione
+     */
+    anime.remove('#hint-block');
+    const hintEl = document.getElementById('hint-block');
+    if (hintEl) hintEl.style.pointerEvents = '';
+    anime({
+      targets:    '#hint-block',
+      opacity:    0.85,
+      translateY: 0,
+      duration:   800,
+      delay:      400,
+      easing:     'easeOutCubic',
+    });
+
     const startCamPos = this.camera.position.clone();
     const startTarget = this.controls.target.clone();
-    const endCamPos   = new THREE.Vector3(0, 120, this.device.isMobile ? 520 : 420);
+    const endCamPos   = new THREE.Vector3(0, 300, this.device.isMobile ? 1670 : 1340);
 
     const camProxy = { x: startCamPos.x, y: startCamPos.y, z: startCamPos.z };
     const tgtProxy = { x: startTarget.x, y: startTarget.y, z: startTarget.z };
@@ -290,17 +314,9 @@ class App {
 
   /* ══════════════════════════════ LABEL IN SCREEN SPACE ════════════════ */
 
-  /**
-   * Posiziona il label sopra il pianeta in coordinate 2D.
-   * Viene chiamato ogni frame quando _lockedPlanet è attivo.
-   */
   _updateLockedCamera() {
     if (!this._lockedPlanet || this._zooming) return;
-
     const planetPos = this._lockedPlanet.getWorldPosition();
-
-    /* Forziamo ogni frame la camera a guardare il pianeta —
-       elimina qualsiasi drift o scatto residuo da OrbitControls */
     this.camera.lookAt(planetPos);
   }
 
@@ -310,7 +326,6 @@ class App {
     const planet    = this._lockedPlanet;
     const planetPos = planet.getWorldPosition();
 
-    /* Proietta un punto leggermente sopra il pianeta */
     const abovePos = planetPos.clone();
     abovePos.y += planet.radius * 1.5;
 
@@ -351,23 +366,14 @@ class App {
 
   _setupGlitch() {
     if (typeof Glitchium === 'undefined') return;
-    this._glitch      = new Glitchium();
-    this._bodyCtrl    = null;  // controllo #detail-body
+    this._glitch   = new Glitchium();
+    this._bodyCtrl = null;
   }
 
-  _glitchMainPanel() { /* no-op — pannello destro non usa Glitchium */ }
+  _glitchMainPanel() { /* no-op */ }
 
   /* ══════════════════════════════ SCRAMBLE TEXT ═══════════════════════ */
 
-  /*
-   * Effetto scramble testo: rivela progressivamente i caratteri reali
-   * attraverso un flusso di caratteri casuali — identico a scrambleText anime v4.
-   *
-   * el       → elemento DOM target
-   * finalText → testo finale da rivelare
-   * duration  → durata totale in ms
-   * density   → 0-1, quanto "rumore" (1 = tutto scramble, 0.3 = leggero)
-   */
   _scramble(el, finalText, duration = 450, density = 1.0) {
     const CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789#@!%&';
     const FPS   = 30;
@@ -383,10 +389,10 @@ class App {
       const revealed = Math.floor(progress * finalText.length);
 
       el.textContent = finalText.split('').map((ch, i) => {
-        if (i < revealed)             return ch;            // già rivelato
-        if (ch === ' ' || ch === '') return ch;           // spazi intatti
-        if (Math.random() > density)  return ch;           // densità ridotta
-        return rnd();                                       // carattere casuale
+        if (i < revealed)             return ch;
+        if (ch === ' ' || ch === '') return ch;
+        if (Math.random() > density)  return ch;
+        return rnd();
       }).join('');
 
       step++;
@@ -396,16 +402,9 @@ class App {
     tick();
   }
 
-  /*
-   * Inizializza Glitchium su #detail-body con createContainers:false.
-   * La struttura wrapper è già nel DOM (index.html) — Glitchium non tocca il DOM,
-   * applica solo CSS transforms al target. Nessun rischio per position:fixed.
-   */
   _initBodyGlitch() {
     if (!this._glitch || this._bodyCtrl) return;
     try {
-      /* createContainers:true (default) — Glitchium wrappa #detail-body.
-         Il CSS in panel.css dà flex:1 al wrapper generato automaticamente. */
       this._bodyCtrl = this._glitch.glitch('#detail-body', {
         playMode:         'manual',
         intensity:         0.60,
@@ -420,10 +419,6 @@ class App {
     } catch(e) { console.warn('[Glitchium body]', e); }
   }
 
-  /*
-   * Glitch Glitchium su #detail-body — apertura pannello e cambio contenuto.
-   * createContainers:false: struttura wrapper già nel DOM (index.html).
-   */
   _glitchDetailPanel() {
     if (!this._glitch) return;
     this._initBodyGlitch();
@@ -450,7 +445,6 @@ class App {
     document.getElementById('panel-section-title').textContent =
       (section.title  ?? '').toUpperCase();
 
-    /* Inietta tab bar + area contenuto */
     const body = document.getElementById('panel-body');
     body.innerHTML = `
       <div id="panel-tabs">
@@ -461,10 +455,8 @@ class App {
       <div class="p-content-area"></div>
     `;
 
-    /* Mostra prima tab */
     this._renderSubitems(body, data, 0);
 
-    /* Tab switching */
     body.querySelectorAll('.p-tab').forEach(btn => {
       btn.addEventListener('click', () => {
         body.querySelectorAll('.p-tab').forEach(b => b.classList.remove('active'));
@@ -480,7 +472,6 @@ class App {
     void panel.offsetWidth;
     panel.classList.add('opening');
 
-    /* Glitch su tab e sub-item dopo apertura */
     this._glitchMainPanel();
   }
 
@@ -495,7 +486,6 @@ class App {
       </div>
     `).join('');
 
-    /* Scramble staggerato sui titoli */
     area.querySelectorAll('.p-subitem-title').forEach((el, i) => {
       setTimeout(() => this._scramble(el, items[i].title, 360, 0.80), i * 75);
     });
@@ -510,9 +500,7 @@ class App {
   }
 
   _renderDetail(body, data, tabIdx, item) {
-    /* Apre il pannello di dettaglio a sinistra */
     this._openDetailPanel(item, () => {
-      /* callback back: chiude il pannello sinistro */
       this._closeDetailPanel();
     });
   }
@@ -524,7 +512,6 @@ class App {
     const bodyEl  = document.getElementById('detail-body');
     const isOpen  = !panel.classList.contains('hidden');
 
-    /* Ricollega back button */
     const wireBack = () => {
       const backBtn = document.getElementById('detail-back');
       const newBack = backBtn.cloneNode(true);
@@ -532,66 +519,93 @@ class App {
       newBack.addEventListener('click', onBack);
     };
 
-    /* Nasconde nav solo su mobile — su desktop entrambi i pannelli coesistono */
-    const hideNav = () => {
-      if (!this.device.isMobile) return;
-      document.getElementById('content-panel')?.classList.add('nav-hidden');
-    };
-
-    /* Scramble: titolo pieno → body con leggero stagger */
     const doScramble = () => {
       this._scramble(titleEl, item.title.toUpperCase(), 420, 1.0);
       setTimeout(() => this._scramble(bodyEl, item.body, 520, 0.75), 130);
     };
 
-    if (!isOpen) {
-      /*
-       * Prima apertura — solo fade + scramble, NO Glitchium.
-       * Evita il conflitto fin dall'inizio.
-       */
-      panel.classList.remove('hidden', 'closing');
-      panel.style.clipPath   = 'inset(0% 0 0% 0)';
-      panel.style.opacity    = '0';
-      panel.style.transition = 'opacity 0.25s ease';
-      titleEl.textContent = '';
-      bodyEl.textContent  = '';
-      wireBack();
-      void panel.offsetWidth;
-      panel.style.opacity = '1';
-      /* Scramble parte dopo il fade, nav sparisce dopo che detail è stabile */
-      setTimeout(doScramble, 270);
-      setTimeout(hideNav, 600);
-
-    } else {
-      /*
-       * Pannello già aperto — sequenza netta:
-       * 1. Glitchium parte (effetto visivo)
-       * 2. A metà: svuota testo silenziosamente
-       * 3. Glitchium si ferma
-       * 4. Scramble rivela il nuovo testo
-       */
-      this._initBodyGlitch();
-      if (this._bodyCtrl) try { this._bodyCtrl.start(); } catch(e) {}
-
-      /* Svuota e ricollega a metà del glitch */
-      setTimeout(() => {
+    /*
+     * Logica di apertura effettiva — chiamata DOPO che il nav è chiuso
+     * (su mobile) oppure direttamente (su desktop, i due pannelli coesistono).
+     */
+    const openDetail = () => {
+      if (!isOpen) {
+        /* Prima apertura: semplice fade-in + scramble */
+        panel.classList.remove('hidden', 'closing');
+        panel.style.clipPath   = 'inset(0% 0 0% 0)';
+        panel.style.opacity    = '0';
+        panel.style.transition = 'opacity 0.25s ease';
         titleEl.textContent = '';
         bodyEl.textContent  = '';
         wireBack();
-        const sl = document.getElementById('detail-scanline');
-        sl.style.animation = 'none';
-        void sl.offsetWidth;
-        sl.style.animation = 'detail-scan 0.35s linear forwards';
-      }, 220);
+        void panel.offsetWidth;
+        panel.style.opacity = '1';
+        setTimeout(doScramble, 270);
 
-      /* Stop Glitchium → scramble, poi nascondi nav */
-      setTimeout(() => {
-        if (this._bodyCtrl) try { this._bodyCtrl.stop(); } catch(e) {}
-        doScramble();
-        setTimeout(hideNav, 300);
-      }, 660);
+      } else {
+        /* Pannello già aperto: glitch → svuota → scramble nuovo contenuto */
+        this._initBodyGlitch();
+        if (this._bodyCtrl) try { this._bodyCtrl.start(); } catch(e) {}
+
+        setTimeout(() => {
+          titleEl.textContent = '';
+          bodyEl.textContent  = '';
+          wireBack();
+          const sl = document.getElementById('detail-scanline');
+          sl.style.animation = 'none';
+          void sl.offsetWidth;
+          sl.style.animation = 'detail-scan 0.35s linear forwards';
+        }, 220);
+
+        setTimeout(() => {
+          if (this._bodyCtrl) try { this._bodyCtrl.stop(); } catch(e) {}
+          doScramble();
+        }, 660);
+      }
+    };
+
+    if (this.device.isMobile) {
+      /*
+       * Mobile: chiudi prima il nav completamente,
+       * poi apri il detail nel complete callback — nessun taglio, nessun overlap.
+       */
+      const nav = document.getElementById('content-panel');
+      const alreadyHidden = !nav || nav.classList.contains('nav-hidden');
+
+      if (!alreadyHidden) {
+        /* Nascondi titolo e nav in parallelo — partono insieme */
+        anime.remove('#title-block');
+        anime({
+          targets:    '#title-block',
+          opacity:    0,
+          translateY: -16,
+          duration:   220,
+          easing:     'easeInCubic',
+        });
+
+        anime.remove(nav);
+        anime({
+          targets:    nav,
+          opacity:    0,
+          translateY: 18,
+          duration:   240,
+          easing:     'easeInCubic',
+          complete: () => {
+            nav.style.pointerEvents = 'none';
+            nav.classList.add('nav-hidden');
+            openDetail();   // ← apre SOLO dopo che nav è sparito
+          },
+        });
+      } else {
+        openDetail();
+      }
+
+    } else {
+      /* Desktop: i due pannelli coesistono, apri subito */
+      openDetail();
     }
   }
+
   _closeDetailPanel(restoreNav = true) {
     const panel = document.getElementById('detail-panel');
     if (panel.classList.contains('hidden')) return;
@@ -602,13 +616,26 @@ class App {
       panel.classList.remove('closing');
     }, 270);
 
-    /* Ripristina nav solo su mobile */
     if (restoreNav && this.device.isMobile) {
-      document.getElementById('content-panel')?.classList.remove('nav-hidden');
+      const nav = document.getElementById('content-panel');
+      if (!nav) return;
+      nav.classList.remove('nav-hidden');
+      nav.style.pointerEvents = '';
+      /* Stato iniziale sicuro prima di animare */
+      nav.style.opacity = '0';
+      nav.style.transform = 'translateY(18px)';
+      anime.remove(nav);
+      anime({
+        targets:    nav,
+        opacity:    1,
+        translateY: 0,
+        duration:   320,
+        delay:      120,
+        easing:     'easeOutCubic',
+      });
     }
   }
 
-  /* Fade + slide mini-transition tra viste */
   _animateContent(body, renderFn) {
     const area = body.querySelector('.p-content-area');
     area.style.transition = 'opacity 0.15s ease, transform 0.15s ease';
@@ -625,7 +652,7 @@ class App {
   }
 
   _closePanel() {
-    this._closeDetailPanel(false);  // chiude anche il pannello sinistro (senza ripristinare nav)
+    this._closeDetailPanel(false);
     const panel = document.getElementById('content-panel');
     if (panel.classList.contains('hidden')) return;
     panel.classList.remove('opening');
@@ -673,7 +700,6 @@ class App {
     if (this._booting)  return;
     if (this._zooming)  return;
 
-    /* Su mobile il tap sullo sfondo esce dal focus (no tasto ESC fisico) */
     if (this._lockedPlanet) {
       if (this.device.isMobile) this._returnToFree();
       return;
@@ -712,7 +738,6 @@ class App {
     }
   }
 
-  /* Nome pianeta sopra, titolo sezione sotto */
   _setLabelText(sectionKey) {
     const section = SECTIONS[sectionKey] ?? {};
     document.getElementById('planet-name').textContent =
@@ -721,7 +746,6 @@ class App {
       (section.title ?? '').toUpperCase();
   }
 
-  /* Label in hover: posizionata sopra il pianeta */
   _showFloatingLabel(sectionKey, planet) {
     const planetPos = planet.getWorldPosition();
     const abovePos  = planetPos.clone();
@@ -741,7 +765,6 @@ class App {
     el.style.transform = 'translate(-50%, -100%)';
   }
 
-  /* Aggiorna posizione label hover ogni frame — segue il pianeta nell orbita */
   _updateHoverLabel() {
     if (!this._hovered || this._lockedPlanet || this._zooming) return;
     const planet    = this._hovered;
@@ -759,11 +782,7 @@ class App {
   }
 
   _hideLabel() {
-    const el = document.getElementById('planet-label');
-    /* NON resettiamo left/top/transform — se li azzeriamo il browser
-       per un frame applica i default CSS (top:50% left:50%) prima
-       che opacity:0 faccia effetto, causando il flash al centro. */
-    el.classList.add('hidden');
+    document.getElementById('planet-label')?.classList.add('hidden');
   }
 
   /* ══════════════════════════════ RESIZE ═══════════════════════════════ */
@@ -787,9 +806,18 @@ class App {
       loading.classList.add('fade-out');
       setTimeout(() => {
         loading.style.display = 'none';
-        anime({ targets: '#title-block', opacity: [0, 1], translateY: [-24, 0], duration: 1700, easing: 'easeOutQuart',
-          complete: () => { this._booting = false; } });
-        anime({ targets: '#hint-block',  opacity: [0, 0.85], duration: 2000, delay: 1100, easing: 'easeOutCubic' });
+        anime({
+          targets: '#title-block',
+          opacity: [0, 1], translateY: [-24, 0],
+          duration: 1700, easing: 'easeOutQuart',
+          complete: () => { this._booting = false; },
+        });
+        anime({
+          targets: '#hint-block',
+          opacity: [0, 0.85],
+          duration: 2000, delay: 1100,
+          easing: 'easeOutCubic',
+        });
       }, 900);
     }, 1500);
   }
@@ -800,32 +828,27 @@ class App {
     const el = document.getElementById('cursor');
     if (!el || this.device.isMobile) return;
 
-    /* Posiziona il cursore */
     el.style.transform = `translate(${this._mouseX}px, ${this._mouseY}px)`;
 
-    /* ── Rilevamento sole ── */
     const projected = new THREE.Vector3(0,0,0).project(this.camera);
     const sx = ( projected.x * 0.5 + 0.5) * window.innerWidth;
     const sy = (-projected.y * 0.5 + 0.5) * window.innerHeight;
-    const edgePx = new THREE.Vector3(28,0,0).project(this.camera);
+    const edgePx = new THREE.Vector3(470,0,0).project(this.camera);
     const ex  = ( edgePx.x * 0.5 + 0.5) * window.innerWidth;
     const sunR = Math.abs(ex - sx) * 1.3;
     const onSun = Math.hypot(this._mouseX - sx, this._mouseY - sy) < sunR;
 
-    /* ── Rilevamento pianeta ── */
     const onPlanet = !onSun && this._hovered !== null;
     const planetColor = onPlanet && this._hovered?.atmosphereColor
       ? '#' + this._hovered.atmosphereColor.toString(16).padStart(6,'0')
       : null;
 
-    /* ── Applica stato ── */
     const wasOnSun    = el.classList.contains('on-sun');
     const wasOnPlanet = el.classList.contains('on-planet');
 
     if (onSun !== wasOnSun || onPlanet !== wasOnPlanet) {
       el.classList.toggle('on-sun',    onSun);
       el.classList.toggle('on-planet', onPlanet);
-
       if (onPlanet && planetColor) {
         el.style.setProperty('--planet-color', planetColor);
       }
@@ -850,7 +873,6 @@ class App {
       p.updateSunDirection(sunPos);
     });
 
-    /* Aggiorna camera e label sul pianeta agganciato ogni frame */
     if (this._lockedPlanet) {
       this._updateLockedCamera();
       this._updateLockedLabel();
@@ -858,12 +880,10 @@ class App {
 
     if (!this.device.isMobile) {
       this._checkHover();
-      this._updateHoverLabel();   // label segue il pianeta orbitante
-      this._updateCursor();       // cursore custom + effetto fuoco sul sole
+      this._updateHoverLabel();
+      this._updateCursor();
     }
 
-    /* controls.update() solo quando né in zoom né agganciati —
-       in entrambi i casi gestiamo la camera manualmente */
     if (!this._zooming && !this._lockedPlanet) this.controls.update();
 
     this.postfx.render();

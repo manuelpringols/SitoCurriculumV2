@@ -5,9 +5,6 @@ import { PLANET_VERT } from '../shaders/chunks.js';
 
 /**
  * Saturn — Istruzione
- * Corpo: texture reale + turbolenza procedurale.
- * Anelli: texture 2k_saturn_ring_alpha.png applicata direttamente
- *         su RingGeometry — UV radiale, double-side, trasparenza dall'alpha.
  */
 export class Saturn extends Planet {
   constructor(scene, options = {}) {
@@ -22,7 +19,7 @@ export class Saturn extends Planet {
     super(scene, {
       ...options,
       atmosphereColor:     0xffdda0,
-      atmosphereIntensity: 0.45,
+      atmosphereIntensity: 0.22,   // era 0.45
       atmospherePower:     3.0,
       atmosphereScale:     1.05,
       axialTilt:           27 * Math.PI / 180,
@@ -70,6 +67,7 @@ export class Saturn extends Planet {
           vec3 color = mix(night, day, dayMix);
           float limb = pow(clamp(dot(Nw, vViewDir), 0.0, 1.0), 0.6);
           color = mix(color * 0.6, color, limb);
+
           gl_FragColor = vec4(color, 1.0);
         }
       `,
@@ -90,11 +88,6 @@ export class Saturn extends Planet {
 
     const geo = new THREE.RingGeometry(innerR, outerR, 256, 4);
 
-    /*
-     * UV radiale: U va da 0 (bordo interno) a 1 (bordo esterno).
-     * La texture saturn_ring ha i dati dei gap e delle bande
-     * distribuiti sull'asse orizzontale — questo mapping è quello corretto.
-     */
     const pos = geo.attributes.position;
     const uv  = geo.attributes.uv;
     for (let i = 0; i < pos.count; i++) {
@@ -102,14 +95,10 @@ export class Saturn extends Planet {
       const y = pos.getY(i);
       const r = Math.sqrt(x * x + y * y);
       const t = (r - innerR) / (outerR - innerR);
-      uv.setXY(i, t, 0.5);  // V fisso a 0.5 = riga centrale della texture
+      uv.setXY(i, t, 0.5);
     }
     uv.needsUpdate = true;
 
-    /*
-     * ShaderMaterial minimale: campiona la texture,
-     * usa l'alpha per la trasparenza, aggiunge luce solare soft.
-     */
     this.ringMaterial = new THREE.ShaderMaterial({
       uniforms: {
         uTexture:      { value: this.options?._texRing ?? null },
@@ -134,16 +123,11 @@ export class Saturn extends Planet {
         void main() {
           vec4 ring = texture2D(uTexture, vUv);
 
-          /* Gli anelli di Saturno sono illuminati dal sole —
-             calcoliamo l'angolo tra la direzione sole e il piano dell'anello */
-          float sunAngle = abs(uSunDirection.y);  // 0 = sole nel piano, 1 = perpendicolare
+          float sunAngle = abs(uSunDirection.y);
           float light = 0.55 + sunAngle * 0.45;
-
           vec3  color = ring.rgb * light;
           float alpha = ring.a;
 
-          /* Ombra del pianeta sugli anelli (approssimata):
-             area nell'ombra opposta al sole */
           vec2  toFrag = normalize(vWorldPos.xz);
           vec2  toSun  = normalize(uSunDirection.xz);
           float shadow = smoothstep(0.88, 1.0, dot(toFrag, -toSun));

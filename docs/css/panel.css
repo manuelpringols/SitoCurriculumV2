@@ -185,11 +185,19 @@
   left: clamp(16px, 3vw, 40px);
   transform: translateY(-50%);
   width: clamp(320px, 42vw, 540px);
-  max-height: 62vh;
+
+  /*
+   * Desktop — altezza guidata dal contenuto.
+   * Pannello corto con testo corto, alto con testo lungo.
+   */
+  height: auto;
+  min-height: 0;
+  max-height: 72vh;
+
   z-index: 50;
   pointer-events: all;
-  display: flex;
-  flex-direction: column;
+  display: block;
+
   background: rgba(0, 4, 20, 0.62);
   border: 1px solid rgba(0, 245, 255, 0.28);
   border-radius: 6px;
@@ -247,11 +255,16 @@
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 
-/* Body — no flex:1 su desktop: il pannello cresce col contenuto */
+/*
+ * Body desktop — altezza naturale del testo, nessun cap fisso.
+ * Il cap è sul pannello (max-height: 72vh); quando il corpo
+ * supera quel limite il pannello smette di crescere e il body
+ * diventa scrollabile.
+ */
 #detail-body {
   overflow-y: auto;
+  max-height: calc(72vh - 56px);   /* 56px ≈ altezza header */
   padding: 16px 18px 20px;
-  /* max-height calcolata dinamicamente dal flex container + max-height panel */
   scrollbar-width: thin; scrollbar-color: rgba(0,245,255,.16) transparent;
   font-family: 'Exo 2', sans-serif; font-size: 0.80rem;
   line-height: 1.82; color: rgba(232,244,248,.82);
@@ -261,9 +274,16 @@
 #detail-body::-webkit-scrollbar-thumb { background: rgba(0,245,255,.16); border-radius: 2px; }
 #detail-body b { color: rgba(0,245,255,.85); font-weight: 600; }
 
-/* Glitchium wrapper — no flex:1 su desktop */
+/*
+ * Glitchium wrapper desktop.
+ * !important su height e display perché Glitchium può settare
+ * height inline fisso al momento dell'inizializzazione —
+ * questo override garantisce che il wrapper segua il contenuto.
+ */
 #detail-panel > div:not([id]):not(.p-corner) {
-  min-height: 0;
+  display: block !important;
+  height: auto !important;
+  min-height: 0 !important;
   overflow: hidden;
 }
 
@@ -273,7 +293,7 @@
 @media (max-width: 767px) {
 
   #content-panel {
-    transition: opacity 0.35s ease;  /* solo mobile */
+    transition: opacity 0.35s ease;
     position: fixed;
     top: auto; bottom: 0;
     left: 0; right: 0; width: 100%;
@@ -297,6 +317,10 @@
     top: auto; bottom: 0;
     left: 0; right: 0; width: 100%;
     transform: none;
+    /* Mobile: torna a flex-column per riempire il bottom-sheet */
+    display: flex;
+    flex-direction: column;
+    height: auto;
     max-height: 64vh;
     border-radius: 14px 14px 0 0;
     border-left: none; border-right: none; border-bottom: none;
@@ -328,15 +352,17 @@
   }
   .p-subitem { padding: 13px 14px; margin-bottom: 9px; }
 
-  /* Mobile: flex:1 riportato per riempire il bottom sheet */
+  /* Mobile: body torna flex:1 + scroll touch per riempire il sheet */
   #detail-body {
     flex: 1;
+    max-height: none;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
     overscroll-behavior: contain;
     padding: 14px 16px 24px;
     min-height: 0;
   }
+  /* Glitchium wrapper mobile: flex per riempire altezza */
   #detail-panel > div:not([id]):not(.p-corner) {
     flex: 1; min-height: 0;
     overflow: hidden;
@@ -347,10 +373,8 @@
   #detail-header { padding: 12px 14px 10px; }
   #panel-section-title { font-size: 0.78rem; }
 
-  /* Back hint non ha senso su touch — già c'è il tasto ‹ Indietro */
   #back-hint { display: none !important; }
 
-  /* Tasto ‹ Indietro più grande e touch-friendly su mobile */
   #detail-back {
     font-size: 0.80rem;
     padding: 7px 16px;

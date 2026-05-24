@@ -20,8 +20,8 @@ export class Universe {
   }
 
   _setBackground() {
-    this.scene.background = new THREE.Color(0x00000a);
-    this.scene.fog = new THREE.FogExp2(0x00000a, 0.00018);
+    this.scene.background = new THREE.Color(0x00021a);
+    this.scene.fog = new THREE.FogExp2(0x00021a, 0.000048);
   }
 
   /* ───────── Starfield ───────── */
@@ -46,7 +46,7 @@ export class Universe {
       const i3 = i * 3;
       const theta = Math.random() * Math.PI * 2;
       const phi   = Math.acos(2 * Math.random() - 1);
-      const r     = 700 + Math.random() * 500;
+      const r     = 5000 + Math.random() * 4000;
       positions[i3]     = r * Math.sin(phi) * Math.cos(theta);
       positions[i3 + 1] = r * Math.sin(phi) * Math.sin(theta);
       positions[i3 + 2] = r * Math.cos(phi);
@@ -74,21 +74,14 @@ export class Universe {
         void main() {
           vColor = aColor;
 
-          /* Blink agisce SOLO sull alpha, mai sulla dimensione.
-             Variare gl_PointSize causa sub-pixel flickering quando
-             la stella scende sotto 1px e WebGL la fa sparire/riapparire. */
           float s1 = sin(uTime * 0.10 + aPhase);
           float s2 = sin(uTime * 0.16 + aPhase * 1.618);
           float blink = 0.92 + s1 * 0.04 + s2 * 0.04;
           vAlpha = clamp(blink, 0.0, 1.0);
 
           vec4 mv = modelViewMatrix * vec4(position, 1.0);
-
-          /* Dimensione stabile: solo distanza, mai blink.
-             max(..., 1.2) garantisce minimo 1.2px → niente sub-pixel flicker. */
-          float size = aSize * (300.0 / -mv.z);
+          float size = aSize * (1200.0 / -mv.z);
           gl_PointSize = max(size, 1.8);
-
           gl_Position = projectionMatrix * mv;
         }
       `,
@@ -124,22 +117,22 @@ export class Universe {
      * theta = longitudine (0 → 2π), phi = latitudine (0 → π).
      * r = distanza dal centro (ben oltre i pianeti, max orb ~500).
      *
-     * Spread ellittico: X/Y grande (nuvola larga), Z piccolo
+     * Spread ellittico: spreadR grande (nuvola larga), spreadT più compatto
      * (disco appiattito verso la camera per massima copertura visiva).
      */
     const defs = [
       // Teal — fronte-sinistra, in alto
-      { theta: 0.6,  phi: 1.0, r: 950,  color: 0x004d66, spreadR: 780, spreadT: 390 },
+      { theta: 0.6,  phi: 1.0, r: 6200, color: 0x004d66, spreadR: 3800, spreadT: 1900 },
       // Arancio/oro — fronte-destra, bassa
-      { theta: 2.0,  phi: 1.9, r: 1050, color: 0x5c2800, spreadR: 720, spreadT: 360 },
+      { theta: 2.0,  phi: 1.9, r: 7000, color: 0x5c2800, spreadR: 3500, spreadT: 1750 },
       // Magenta/viola — dietro-sinistra
-      { theta: 3.5,  phi: 1.3, r: 900,  color: 0x3d0050, spreadR: 840, spreadT: 420 },
+      { theta: 3.5,  phi: 1.3, r: 5800, color: 0x3d0050, spreadR: 4200, spreadT: 2100 },
       // Blu profondo — sopra
-      { theta: 4.8,  phi: 0.4, r: 1100, color: 0x001040, spreadR: 900, spreadT: 450 },
+      { theta: 4.8,  phi: 0.4, r: 7500, color: 0x001040, spreadR: 4500, spreadT: 2250 },
       // Ambra rossastro — dietro-destra, bassa
-      { theta: 5.5,  phi: 2.2, r: 980,  color: 0x4a1800, spreadR: 750, spreadT: 375 },
+      { theta: 5.5,  phi: 2.2, r: 6500, color: 0x4a1800, spreadR: 3600, spreadT: 1800 },
       // Verde-blu tenue — dietro al centro
-      { theta: 1.3,  phi: 0.6, r: 1150, color: 0x002e1e, spreadR: 975, spreadT: 480 },
+      { theta: 1.3,  phi: 0.6, r: 8000, color: 0x002e1e, spreadR: 4800, spreadT: 2400 },
     ];
 
     /*
@@ -173,10 +166,10 @@ export class Universe {
         positions[i3 + 2] = cz + gz * spreadR;
 
         // Alpha molto bassa: l'effetto gas emerge dalla sovrapposizione additiva
-        alphas[i] = 0.022 + Math.random() * 0.038;
+        alphas[i] = 0.030 + Math.random() * 0.048;
 
         // Particelle grandi con falloff gaussiano = nuvola morbida
-        psizes[i] = 180 + Math.random() * 180;
+        psizes[i] = 320 + Math.random() * 320;
       }
 
       const geo = new THREE.BufferGeometry();
@@ -194,7 +187,7 @@ export class Universe {
             vA = aAlpha;
             vec4 mv = modelViewMatrix * vec4(position, 1.0);
             float dist = max(-mv.z, 1.0);
-            gl_PointSize = aSize * clamp(320.0 / dist, 0.4, 6.0);
+            gl_PointSize = aSize * clamp(1800.0 / dist, 0.2, 12.0);
             gl_Position = projectionMatrix * mv;
           }
         `,
@@ -218,6 +211,7 @@ export class Universe {
       this.nebulaGroup.add(new THREE.Points(geo, mat));
     });
 
+    this.nebulaGroup.renderOrder = -1;
     this.scene.add(this.nebulaGroup);
   }
 

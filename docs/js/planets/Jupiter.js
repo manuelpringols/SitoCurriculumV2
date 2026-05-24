@@ -8,10 +8,11 @@ export class Jupiter extends Planet {
     const loader = new THREE.TextureLoader();
     options._tex = loader.load('./textures/2k_jupiter.jpg',
       t => { t.colorSpace = THREE.SRGBColorSpace; });
+
     super(scene, {
       ...options,
       atmosphereColor:     0xffaa55,
-      atmosphereIntensity: 0.70,
+      atmosphereIntensity: 0.26,   // era 0.70
       atmospherePower:     3.0,
       atmosphereScale:     1.05,
       axialTilt:           3 * Math.PI / 180,
@@ -20,6 +21,7 @@ export class Jupiter extends Planet {
 
   _buildBody() {
     const geo = new THREE.SphereGeometry(this.radius, this.segments, this.segments);
+
     this.material = new THREE.ShaderMaterial({
       uniforms: {
         uTime:         { value: 0 },
@@ -68,12 +70,15 @@ export class Jupiter extends Planet {
           vec3 color = mix(night, day, dayMix);
           float limb = pow(clamp(dot(Nw, vViewDir), 0.0, 1.0), 0.6);
           color = mix(color * 0.55, color, limb);
+
           gl_FragColor = vec4(color, 1.0);
         }
       `,
     });
+
     if (this.options?._tex)
       this.material.uniforms.uTexture.value = this.options._tex;
+
     this.mesh = new THREE.Mesh(geo, this.material);
     this.mesh.name = this.name;
     this.spinGroup.add(this.mesh);

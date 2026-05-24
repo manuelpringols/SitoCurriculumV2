@@ -1,12 +1,9 @@
 import * as THREE from 'three';
 
 /**
- * MilkyWay — disco galattico inclinato sullo sfondo.
- *
- * Fix animazione: rimosso gl_PointSize variabile con z nella rotazione.
- * Le stelle della Via Lattea ora hanno dimensione stabile — nessuno
- * strobo visivo quando il disco ruota.
- * Rotazione galattica: time * 0.0008 (quasi ferma, come realtà).
+ * MilkyWay — disco galattico a 3 bracci spirali.
+ * Raggio esteso a 4500 per coprire le orbite dei pianeti (max ~1516).
+ * 3 bracci invece di 4 → forma triforme, non quadrilatero.
  */
 export class MilkyWay {
   constructor(scene, device) {
@@ -16,11 +13,12 @@ export class MilkyWay {
   }
 
   _build() {
-    const count = this.device.isMobile ? 4000 : 10000;
+    const count = this.device.isMobile ? 22000 : 80000;
     const positions = new Float32Array(count * 3);
     const colors    = new Float32Array(count * 3);
     const sizes     = new Float32Array(count);
 
+    /* Palette galattica */
     const palette = [
       new THREE.Color(0xffeebb),
       new THREE.Color(0xfff5e1),
@@ -32,32 +30,41 @@ export class MilkyWay {
     for (let i = 0; i < count; i++) {
       const i3 = i * 3;
 
+      /* Distribuzione radiale: nucleo denso + disco esteso fino a 4500 */
       const u = Math.random();
-      const r = Math.pow(u, 0.4) * 1300 + 200;
+      const r = Math.pow(u, 0.38) * 4500 + 180;
 
-      const armOffset = Math.floor(Math.random() * 4) * (Math.PI * 0.5);
-      const spiral    = (r / 1500) * Math.PI * 1.5;
-      const theta     = Math.random() * Math.PI * 2 + armOffset + spiral;
+      /*
+       * 3 bracci spirali a 120° — dà forma triforme invece di quadrilatero.
+       * armOffset: 0°, 120°, 240°
+       */
+      const armOffset = Math.floor(Math.random() * 3) * (Math.PI * 2 / 3);
+      const spiral    = (r / 4500) * Math.PI * 2.2;
+      const scatter   = (Math.random() - 0.5) * 0.55;   // dispersione angolare
+      const theta     = Math.random() * Math.PI * 2 * 0.15   // rumore base
+                      + armOffset + spiral + scatter;
 
-      const thickness = 70 * Math.exp(-r / 1000);
+      /* Disco sottile — spessore si riduce all'esterno */
+      const thickness = 80 * Math.exp(-r / 2200);
       const yOff = (Math.random() - 0.5) * thickness * 2;
 
       positions[i3]     = Math.cos(theta) * r;
       positions[i3 + 1] = yOff;
       positions[i3 + 2] = Math.sin(theta) * r;
 
-      const distNorm = r / 1500;
-      const palIdx = distNorm < 0.3
+      /* Colore: caldo al centro, freddo all'esterno */
+      const distNorm = r / 4500;
+      const palIdx = distNorm < 0.25
         ? 0
-        : distNorm < 0.55 ? 1
-        : distNorm < 0.75 ? 2
-        : Math.random() < 0.7 ? 3 : 4;
-      const c = palette[palIdx];
-      colors[i3] = c.r; colors[i3 + 1] = c.g; colors[i3 + 2] = c.b;
+        : distNorm < 0.50 ? 1
+        : distNorm < 0.72 ? 2
+        : Math.random() < 0.65 ? 3 : 4;
+      const col = palette[palIdx];
+      colors[i3] = col.r; colors[i3 + 1] = col.g; colors[i3 + 2] = col.b;
 
-      /* Dimensioni fisse — non dipendono da z per evitare strobo */
-      const sizeBase = distNorm < 0.2 ? 1.4 : 0.5;
-      sizes[i] = sizeBase + Math.random() * 0.8;
+      /* Stelle del nucleo più grandi */
+      const sizeBase = distNorm < 0.15 ? 1.8 : 0.7;
+      sizes[i] = sizeBase + Math.random() * 1.1;
     }
 
     const geo = new THREE.BufferGeometry();
@@ -74,12 +81,7 @@ export class MilkyWay {
         void main() {
           vColor = aColor;
           vec4 mv = modelViewMatrix * vec4(position, 1.0);
-
-          /* Minimo 1.2px: sotto questa soglia WebGL causa sub-pixel
-             flickering — la stella appare e sparisce ogni frame. */
-          float dist = max(-mv.z, 1.0);
-          float size = aSize * (220.0 / dist);
-          gl_PointSize = max(size, 1.8);
+          gl_PointSize = aSize * (1400.0 / -mv.z);
           gl_Position = projectionMatrix * mv;
         }
       `,
@@ -90,7 +92,7 @@ export class MilkyWay {
           float d = length(uv);
           if (d > 0.5) discard;
           float a = 1.0 - smoothstep(0.0, 0.5, d);
-          gl_FragColor = vec4(vColor, a * 0.50);
+          gl_FragColor = vec4(vColor, a * 0.55);
         }
       `,
       transparent: true,
@@ -100,17 +102,17 @@ export class MilkyWay {
 
     this.points = new THREE.Points(geo, mat);
 
+    /* Inclinazione caratteristica della banda galattica */
     this.points.rotation.x = Math.PI * 0.30;
     this.points.rotation.z = Math.PI * 0.18;
-    this.points.position.y = -50;
+    this.points.position.y = -80;
 
     this.scene.add(this.points);
   }
 
   update(time) {
     if (this.points) {
-      /* Rotazione galattica quasi impercettibile */
-      this.points.rotation.y = time * 0.0008;
+      this.points.rotation.y = time * 0.0015;
     }
   }
 }
