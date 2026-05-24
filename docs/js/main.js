@@ -445,7 +445,9 @@ class App {
     if (!section || !data) return;
 
     const panel = document.getElementById('content-panel');
-    panel.classList.remove('hidden', 'closing');
+    panel.classList.remove('hidden', 'closing', 'nav-hidden');
+    panel.style.opacity = '';  /* reset inline opacity da anime.js */
+    panel.style.transform = '';  /* reset inline transform da anime.js */
 
     document.getElementById('panel-planet-name').textContent =
       (section.planet ?? '').toUpperCase();
@@ -662,6 +664,10 @@ class App {
     this._closeDetailPanel(false);
     const panel = document.getElementById('content-panel');
     if (panel.classList.contains('hidden')) return;
+    /* Rimuovi nav-hidden per garantire visibilità alla prossima apertura */
+    panel.classList.remove('nav-hidden');
+    panel.style.opacity = '';
+    panel.style.transform = '';
     panel.classList.remove('opening');
     panel.classList.add('closing');
     setTimeout(() => {
