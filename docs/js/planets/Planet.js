@@ -161,6 +161,6 @@ export class Planet {
         on ? this.atmosphereIntensity * 1.8 : this.atmosphereIntensity;
     }
     /* Scala: 1.15× on hover, torna a 1.0 all'uscita */
-    this._scaleTarget = on ? 3.0 : 1.0;
+    this._scaleTarget = on ? 1.8 : 1.0;
   }
 }

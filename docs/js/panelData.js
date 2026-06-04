@@ -8,12 +8,15 @@ export const PANEL_DATA = {
     { label: 'Profilo', items: [
       { title: 'Chi Sono',
         body: `Sono Manuel Cerqua, sviluppatore con cinque anni di studio autonomo su documentazione ufficiale e libri tecnici.\n\nLa passione per la programmazione è nata in età adolescenziale, ma per lungo tempo non ho avuto né le risorse né la motivazione giusta per approfondirla seriamente. Quando ho deciso di farlo, l'ho fatto sul serio: documentazione prima di tutto, progetti reali, niente scorciatoie.\n\nOggi mi sento a mio agio quando lavoro con Java e Spring Boot, con cui riesco a gestire backend anche su architetture a microservizi, inclusa la gestione della sicurezza con Spring Security e token JWT.` },
+      ]},
+      
+      
+    { label: 'Approccio', items: [
       { title: 'Problem Solving',
         body: `Il problem solving è probabilmente la competenza su cui mi sento più solido.\n\nViene da anni di studio autonomo — quando non hai nessuno a cui chiedere, impari a scomporre il problema, leggere i log, capire cosa sta succedendo davvero sotto il cofano.\n\nQuesto approccio si è dimostrato utile anche in contesto lavorativo, dove fin dal primo giorno mi sono trovato a gestire casi reali senza troppo supporto. Non mi spaventa non sapere qualcosa: so dove cercare e come ragionare per arrivarci.` },
-    ]},
-    { label: 'Approccio', items: [
+    
       { title: 'Come Studio',
-        body: `Il mio metodo è sempre partito dalla documentazione ufficiale — Spring.io, Oracle Docs, MDN, ServiceNow Docs. Non mi piace copiare codice che non capisco.\n\nHo completato corsi su Udemy dedicati a Spring Boot e Angular, che mi hanno dato struttura a cose che avevo già esplorato da solo. Non li considero il punto di partenza, ma un modo per consolidare e ordinare.\n\nLa pratica è sempre stata la vera palestra: ogni concetto studiato è stato applicato su qualcosa di reale, anche piccolo, anche rotto. Soprattutto quando era rotto.` },
+        body: `Il mio metodo è sempre partito dalla documentazione ufficiale — Spring.io, Oracle Docs, MDN, ServiceNow Docs.\nHo completato corsi su Udemy dedicati a Spring Boot e Angular, che mi hanno dato struttura a cose che avevo già esplorato da solo. Non li considero il punto di partenza, ma un modo per consolidare e ordinare.\n\nLa pratica è sempre stata la vera palestra: ogni concetto studiato è stato applicato su qualcosa di reale, anche piccolo, anche rotto. Soprattutto quando era rotto.` },
       { title: 'Direzione: Cybersecurity',
         body: `Il prossimo step che voglio fare è virare verso la cybersecurity.\n\nNon è un interesse nato ieri — è qualcosa che mi ha sempre attirato, e che inizia ad avere senso come direzione professionale concreta. Il primo traguardo che mi sono dato è ottenere la certificazione eJPT (eLearnSecurity Junior Penetration Tester), che rappresenta un punto di ingresso solido e riconosciuto in questo ambito.\n\nLe basi ci sono: Linux, networking, gestione dei server, automazione. Costruirci sopra qualcosa di orientato alla sicurezza è il piano.` },
     ]},
@@ -21,7 +24,7 @@ export const PANEL_DATA = {
       { title: 'Astronomia & Spazio',
         body: `Come si evince abbastanza chiaramente da questo sito, sono appassionato di astronomia e di tutto ciò che riguarda lo spazio.\n\nNon è solo estetica — è un interesse genuino che mi porta a leggere, guardare e approfondire ogni volta che posso. I pianeti, le nebulose, la struttura dell'universo: trovo tutto questo affascinante sia dal punto di vista scientifico che visivo.\n\nIl portfolio in forma di sistema solare non era un'idea casuale.` },
       { title: 'Progetti Personali',
-        body: `Fuori dal lavoro ho sempre avuto piccoli progetti in giro su vari ambiti.\n\nAlcuni sono strumenti pratici (Marmitta, la VPN WireGuard), altri più orientati all'apprendimento (il server Jellyfin, le configurazioni VPS). Non tutti sono finiti, non tutti hanno uno scopo preciso — ma tutti hanno insegnato qualcosa.\n\nQuesto sito è forse il progetto più visibile, ma è solo la punta di un iceberg fatto di cose che vivono su un VPS o in un repo GitHub.` },
+        body: `Fuori dal lavoro ho sempre avuto piccoli progetti personali in giro su vari ambiti.\n\nAlcuni sono strumenti pratici (Marmitta, la VPN WireGuard), altri più orientati all'apprendimento (il server Jellyfin, le configurazioni VPS). Non tutti sono finiti, non tutti hanno uno scopo preciso — ma tutti mi hanno insegnato qualcosa.\n\nQuesto sito è forse il progetto più visibile, ma è solo la punta di un iceberg fatto di cose che vivono su un VPS o in un repo GitHub.` },
     ]},
   ]},
 
@@ -63,7 +66,7 @@ export const PANEL_DATA = {
     ]},
     { label: 'Roadmap', items: [
       { title: 'Completato',
-        body: `✅ Completato ad oggi:\n\n• Java + Spring Boot ecosystem (microservizi, Spring Security, JWT, Spring Data JPA)\n• ServiceNow platform (workflow, scripted resources, integrazioni)\n• Docker e Docker Compose\n• Nginx come reverse proxy\n• Linux server management\n• Git (workflow base, branching, commit history pulito)\n• MySQL e PostgreSQL\n• WireGuard VPN\n• HTML, CSS, JavaScript\n• Angular (base, completato corso Udemy)\n• Three.js e GLSL shaders (progetto portfolio)\n• Certificazione Java Foundations Associate` },
+        body: `✅ Completato ad oggi:\n\n• Java + Spring Boot ecosystem (microservizi, Spring Security, JWT, Spring Data JPA)\n• ServiceNow platform (workflow, scripted resources, integrazioni)\n• Docker e Docker Compose\n• Nginx come reverse proxy\n• Linux server management\n• Git (workflow base, branching, commit history pulito)\n• MySQL e PostgreSQL\n• WireGuard VPN\n• HTML, CSS, JavaScript\n• Angular (conoscende di base)\n• Three.js e GLSL shaders (progetto portfolio)\n• Certificazione Java Foundations Associate` },
       { title: 'Prossimi step',
         body: `🎯 In programma:\n\n• eJPT — certificazione cybersecurity entry-level, primo obiettivo concreto\n• Approfondimento networking e protocolli (TCP/IP, DNS, HTTP in dettaglio)\n• Basi di ethical hacking e penetration testing metodologico\n• Linux avanzato in ottica security\n• Espansione del repo di script Marmitta in direzione security/automazione\n\nL'obiettivo non è diventare un pentester dall'oggi al domani. È costruire una base solida, certificata e reale — partendo da quello che so già e aggiungendo il layer di sicurezza sopra.` },
     ]},
