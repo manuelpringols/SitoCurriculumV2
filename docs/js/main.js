@@ -122,6 +122,8 @@ class App {
         radius: 26, orbitRadius: 1490, orbitSpeed: 0.045, rotSpeed: 0.30, inclination: 0.02 },
     ];
 
+    const hud = document.getElementById('hud');
+
     defs.forEach((def, i) => {
       const p = new def.Class(this.scene, {
         name: def.name, radius: def.radius, orbitRadius: def.orbitRadius,
@@ -133,6 +135,17 @@ class App {
       p.mesh.userData.sectionKey = def.key;
       p.mesh.userData.planetRef  = p;
       this.planets.push(p);
+
+      // ── Label sempre visibile per questo pianeta ──
+      const section = SECTIONS[def.key] ?? {};
+      const tag = document.createElement('div');
+      tag.className = 'planet-tag';
+      tag.innerHTML = `
+        <span class="planet-tag-name">${(section.planet ?? '').toUpperCase()}</span>
+        <span class="planet-tag-section">${(section.title ?? '').toUpperCase()}</span>
+      `;
+      hud.appendChild(tag);
+      p._tag = tag;
     });
   }
 
@@ -335,6 +348,40 @@ class App {
     el.style.transform = 'translate(-50%, -100%)';
   }
 
+  /* ══════════════════════════════ PLANET TAGS (sempre visibili) ════════ */
+
+  _updatePlanetTags() {
+    const hide = !!(this._lockedPlanet || this._zooming);
+
+    this.planets.forEach(p => {
+      if (!p._tag) return;
+
+      if (hide) {
+        p._tag.classList.add('planet-tag--hidden');
+        return;
+      }
+
+      const planetPos = p.getWorldPosition();
+      const abovePos  = planetPos.clone();
+      abovePos.y += p.radius * 2.2;
+
+      const projected = abovePos.clone().project(this.camera);
+
+      if (projected.z > 1) {
+        p._tag.classList.add('planet-tag--hidden');
+        return;
+      }
+
+      const x = ( projected.x * 0.5 + 0.5) * window.innerWidth;
+      const y = (-projected.y * 0.5 + 0.5) * window.innerHeight;
+
+      p._tag.style.left = `${x}px`;
+      p._tag.style.top  = `${y}px`;
+      p._tag.classList.remove('planet-tag--hidden');
+      p._tag.classList.toggle('planet-tag--active', p === this._hovered);
+    });
+  }
+
   /* ══════════════════════════════ HUD HINTS ════════════════════════════ */
 
   _showBackHint() {
@@ -364,7 +411,7 @@ class App {
 
   /* ══════════════════════════════ SCRAMBLE TEXT ═══════════════════════ */
 
-  _scramble(el, finalText, duration = 450, density = 1.0) {
+  _scramble(el, finalText, duration = 450, density = 1.0, onComplete = null) {
     const CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789#@!%&';
     const FPS   = 30;
     const steps = Math.round((duration / 1000) * FPS);
@@ -373,7 +420,12 @@ class App {
     const rnd = () => CHARS[Math.floor(Math.random() * CHARS.length)];
 
     const tick = () => {
-      if (step > steps) { el.textContent = finalText; return; }
+      if (step > steps) {
+        el.textContent = finalText;
+        el.innerHTML = el.innerHTML.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+        if (onComplete) onComplete(el);
+        return;
+      }
 
       const progress = step / steps;
       const revealed = Math.floor(progress * finalText.length);
@@ -429,7 +481,7 @@ class App {
 
     const panel = document.getElementById('content-panel');
     panel.classList.remove('hidden', 'closing', 'nav-hidden');
-    panel.style.opacity = '';
+    panel.style.opacity   = '';
     panel.style.transform = '';
 
     document.getElementById('panel-planet-name').textContent =
@@ -463,7 +515,6 @@ class App {
 
     void panel.offsetWidth;
     panel.classList.add('opening');
-
     this._glitchMainPanel();
   }
 
@@ -513,7 +564,9 @@ class App {
 
     const doScramble = () => {
       this._scramble(titleEl, item.title.toUpperCase(), 420, 1.0);
-      setTimeout(() => this._scramble(bodyEl, item.body, 520, 0.75), 130);
+      setTimeout(() => this._scramble(bodyEl, item.body, 520, 0.75, (el) => {
+        if (window.twemoji) twemoji.parse(el);
+      }), 130);
     };
 
     const openDetail = () => {
@@ -635,7 +688,7 @@ class App {
     const panel = document.getElementById('content-panel');
     if (panel.classList.contains('hidden')) return;
     panel.classList.remove('nav-hidden');
-    panel.style.opacity = '';
+    panel.style.opacity   = '';
     panel.style.transform = '';
     panel.classList.remove('opening');
     panel.classList.add('closing');
@@ -708,14 +761,11 @@ class App {
         this._hovered?.highlight(false);
         this._hovered = planet;
         planet.highlight(true);
-        const k = hits[0].object.userData.sectionKey;
-        this._showFloatingLabel(k, planet);
         document.body.style.cursor = 'pointer';
       }
     } else if (this._hovered) {
       this._hovered.highlight(false);
       this._hovered = null;
-      this._hideLabel();
       document.body.style.cursor = 'default';
     }
   }
@@ -812,24 +862,17 @@ class App {
 
     el.style.transform = `translate(${this._mouseX}px, ${this._mouseY}px)`;
 
-    // ✅ FIX 2: in focus mode (pianeta bloccato o zoom in corso)
-    // il cursore fuoco non deve mai attivarsi — reset immediato e uscita.
     if (this._lockedPlanet || this._zooming) {
       el.classList.remove('on-sun', 'on-planet');
       return;
     }
 
-    // ── Rilevamento sole: proietta il SOLO coreMesh (raggio R=200) ──
-    // Proiettiamo il centro del sole e un punto a +200 unità sull'asse X.
-    // Questo corrisponde esattamente al raggio del coreMesh, escludendo
-    // le billboard della corona (che arrivano fino a R*22 = 4400).
-    // ✅ FIX 1: rimossa la moltiplicazione * 1.3 e usato R=200 (solo core).
     const projected = new THREE.Vector3(0, 0, 0).project(this.camera);
     const sx = ( projected.x * 0.5 + 0.5) * window.innerWidth;
     const sy = (-projected.y * 0.5 + 0.5) * window.innerHeight;
     const edgePx = new THREE.Vector3(200, 0, 0).project(this.camera);
     const ex  = ( edgePx.x * 0.5 + 0.5) * window.innerWidth;
-    const sunR = Math.abs(ex - sx); // nessun moltiplicatore — solo il core
+    const sunR = Math.abs(ex - sx);
     const onSun = Math.hypot(this._mouseX - sx, this._mouseY - sy) < sunR;
 
     const onPlanet = !onSun && this._hovered !== null;
@@ -871,6 +914,9 @@ class App {
       this._updateLockedCamera();
       this._updateLockedLabel();
     }
+
+    // Planet tags: sempre aggiornati (desktop e mobile)
+    this._updatePlanetTags();
 
     if (!this.device.isMobile) {
       this._checkHover();
