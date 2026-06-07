@@ -9,7 +9,7 @@ import * as THREE from 'three';
  */
 export class MilkyWay {
   constructor(scene, device) {
-    this.scene  = scene;
+    this.scene = scene;
     this.device = device;
     this._build();
   }
@@ -17,8 +17,8 @@ export class MilkyWay {
   _build() {
     const count = this.device.isMobile ? 22000 : 80000;
     const positions = new Float32Array(count * 3);
-    const colors    = new Float32Array(count * 3);
-    const sizes     = new Float32Array(count);
+    const colors = new Float32Array(count * 3);
+    const sizes = new Float32Array(count);
 
     const palette = [
       new THREE.Color(0xffeebb),
@@ -32,18 +32,17 @@ export class MilkyWay {
       const i3 = i * 3;
 
       const u = Math.random();
-      const r = Math.pow(u, 0.38) * 4500 + 180;
-
+      const r = Math.pow(u, 0.38) * 2800 + 1800;
       const armOffset = Math.floor(Math.random() * 3) * (Math.PI * 2 / 3);
-      const spiral    = (r / 4500) * Math.PI * 2.2;
-      const scatter   = (Math.random() - 0.5) * 0.55;
-      const theta     = Math.random() * Math.PI * 2 * 0.15
-                      + armOffset + spiral + scatter;
+      const spiral = (r / 4500) * Math.PI * 2.2;
+      const scatter = (Math.random() - 0.5) * 0.55;
+      const theta = Math.random() * Math.PI * 2 * 0.15
+        + armOffset + spiral + scatter;
 
       const thickness = 80 * Math.exp(-r / 2200);
       const yOff = (Math.random() - 0.5) * thickness * 2;
 
-      positions[i3]     = Math.cos(theta) * r;
+      positions[i3] = Math.cos(theta) * r;
       positions[i3 + 1] = yOff;
       positions[i3 + 2] = Math.sin(theta) * r;
 
@@ -51,8 +50,8 @@ export class MilkyWay {
       const palIdx = distNorm < 0.25
         ? 0
         : distNorm < 0.50 ? 1
-        : distNorm < 0.72 ? 2
-        : Math.random() < 0.65 ? 3 : 4;
+          : distNorm < 0.72 ? 2
+            : Math.random() < 0.65 ? 3 : 4;
       const col = palette[palIdx];
       colors[i3] = col.r; colors[i3 + 1] = col.g; colors[i3 + 2] = col.b;
 
@@ -62,8 +61,8 @@ export class MilkyWay {
 
     const geo = new THREE.BufferGeometry();
     geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-    geo.setAttribute('aColor',   new THREE.BufferAttribute(colors, 3));
-    geo.setAttribute('aSize',    new THREE.BufferAttribute(sizes, 1));
+    geo.setAttribute('aColor', new THREE.BufferAttribute(colors, 3));
+    geo.setAttribute('aSize', new THREE.BufferAttribute(sizes, 1));
 
     const mat = new THREE.ShaderMaterial({
       uniforms: { uTime: { value: 0 } },
