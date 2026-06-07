@@ -11,48 +11,59 @@ import * as THREE from 'three';
  * 5. Outer halo     — alone viola con onde gravitazionali
  */
 export class Singularity {
-  constructor(scene, opts = {}) {
-    this.scene           = scene;
-    this.radius          = opts.radius    ?? 28;
-    this.rotSpeed        = opts.rotSpeed  ?? 0.03;
-    this.sectionKey      = opts.sectionKey ?? 'singularity';
-    this.atmosphereColor = 0x9900ff;
+    constructor(scene, opts = {}) {
+        this.scene = scene;
+        this.radius = opts.radius ?? 28;
+        this.rotSpeed = opts.rotSpeed ?? 0.03;
+        this.sectionKey = opts.sectionKey ?? 'singularity';
+        this.atmosphereColor = 0x9900ff;
 
-    this._scaleTarget  = 1.0;
-    this._scaleCurrent = 1.0;
-    this._shaderMats   = [];
+        this._scaleTarget = 1.0;
+        this._scaleCurrent = 1.0;
+        this._shaderMats = [];
 
-    this.bodyGroup = new THREE.Group();
-    this.scene.add(this.bodyGroup);
+        this.bodyGroup = new THREE.Group();
+        this.scene.add(this.bodyGroup);
 
-    const pos = opts.fixedPosition ?? new THREE.Vector3(3400, 650, -2600);
-    this.bodyGroup.position.copy(pos);
+        const pos = opts.fixedPosition ?? new THREE.Vector3(3400, 650, -2600);
+        this.bodyGroup.position.copy(pos);
 
-    this._buildEventHorizon();
-    this._buildLensingGlow();
-    this._buildPhotonRing();
-    this._buildAccretionDisk();
-    this._buildOuterHalo();
+        this._buildEventHorizon();
+        this._buildLensingGlow();
+        this._buildPhotonRing();
+        this._buildAccretionDisk();
+        this._buildOuterHalo();
+        this._buildHitbox();
 
-    this.mesh = this._horizonMesh;
-    this.mesh.userData.sectionKey = this.sectionKey;
-    this.mesh.userData.planetRef  = this;
-  }
+        this.mesh = this._hitboxMesh;
+        this.mesh.userData.sectionKey = this.sectionKey;
+        this.mesh.userData.planetRef = this;
+    }
 
-  /* ── 1. Event horizon ── */
-  _buildEventHorizon() {
-    const geo = new THREE.SphereGeometry(this.radius, 64, 64);
-    const mat = new THREE.MeshBasicMaterial({ color: 0x000000 });
-    this._horizonMesh = new THREE.Mesh(geo, mat);
-    this.bodyGroup.add(this._horizonMesh);
-  }
+    /* ── 1. Event horizon ── */
+    _buildEventHorizon() {
+        const geo = new THREE.SphereGeometry(this.radius, 64, 64);
+        const mat = new THREE.MeshBasicMaterial({ color: 0x000000 });
+        this._horizonMesh = new THREE.Mesh(geo, mat);
+        this.bodyGroup.add(this._horizonMesh);
+    }
 
-  /* ── 2. Lensing glow ── */
-  _buildLensingGlow() {
-    const geo = new THREE.SphereGeometry(this.radius * 1.18, 64, 64);
-    const mat = new THREE.ShaderMaterial({
-      uniforms: { uTime: { value: 0 } },
-      vertexShader: /* glsl */`
+    _buildHitbox() {
+        // Sfera invisibile più grande, rilevata dal raycaster ma non renderizzata
+        const geo = new THREE.SphereGeometry(this.radius * 2.8, 16, 16);
+        const mat = new THREE.MeshBasicMaterial({
+            colorWrite: false,  // non scrive sul colore
+            depthWrite: false,  // non scrive sul depth buffer
+        });
+        this._hitboxMesh = new THREE.Mesh(geo, mat);
+        this.bodyGroup.add(this._hitboxMesh);
+    }
+
+    /* ── 2. Lensing glow ── */
+    _buildLensingGlow() {
+        const geo = new THREE.SphereGeometry(this.radius * 1.55, 64, 64); const mat = new THREE.ShaderMaterial({
+            uniforms: { uTime: { value: 0 } },
+            vertexShader: /* glsl */`
         varying vec3 vNormal;
         varying vec3 vViewDir;
         void main() {
@@ -62,7 +73,7 @@ export class Singularity {
           gl_Position = projectionMatrix * mv;
         }
       `,
-      fragmentShader: /* glsl */`
+            fragmentShader: /* glsl */`
         uniform float uTime;
         varying vec3  vNormal;
         varying vec3  vViewDir;
@@ -108,25 +119,25 @@ export class Singularity {
           gl_FragColor = vec4(col, clamp(alpha, 0.0, 1.0));
         }
       `,
-      transparent: true,
-      depthWrite:  false,
-      blending:    THREE.AdditiveBlending,
-      side:        THREE.FrontSide,
-    });
-    this._shaderMats.push(mat);
-    this.bodyGroup.add(new THREE.Mesh(geo, mat));
-  }
+            transparent: true,
+            depthWrite: false,
+            blending: THREE.AdditiveBlending,
+            side: THREE.FrontSide,
+        });
+        this._shaderMats.push(mat);
+        this.bodyGroup.add(new THREE.Mesh(geo, mat));
+    }
 
-  /* ── 3. Photon ring ── */
-  _buildPhotonRing() {
-    const geo = new THREE.TorusGeometry(
-      this.radius * 1.58,
-      this.radius * 0.09,
-      24, 160
-    );
-    const mat = new THREE.ShaderMaterial({
-      uniforms: { uTime: { value: 0 } },
-      vertexShader: /* glsl */`
+    /* ── 3. Photon ring ── */
+    _buildPhotonRing() {
+        const geo = new THREE.TorusGeometry(
+            this.radius * 1.58,
+            this.radius * 0.09,
+            24, 160
+        );
+        const mat = new THREE.ShaderMaterial({
+            uniforms: { uTime: { value: 0 } },
+            vertexShader: /* glsl */`
         varying vec3 vNorm;
         varying vec3 vViewDir;
         void main() {
@@ -136,7 +147,7 @@ export class Singularity {
           gl_Position = projectionMatrix * mv;
         }
       `,
-      fragmentShader: /* glsl */`
+            fragmentShader: /* glsl */`
         uniform float uTime;
         varying vec3  vNorm;
         varying vec3  vViewDir;
@@ -150,38 +161,38 @@ export class Singularity {
           gl_FragColor = vec4(col, alpha);
         }
       `,
-      transparent: true,
-      depthWrite:  false,
-      blending:    THREE.AdditiveBlending,
-    });
-    const mesh = new THREE.Mesh(geo, mat);
-    mesh.rotation.x = Math.PI * 0.28;
-    this._shaderMats.push(mat);
-    this._photonRing = mesh;
-    this.bodyGroup.add(mesh);
-  }
+            transparent: true,
+            depthWrite: false,
+            blending: THREE.AdditiveBlending,
+        });
+        const mesh = new THREE.Mesh(geo, mat);
+        mesh.rotation.x = Math.PI * 0.28;
+        this._shaderMats.push(mat);
+        this._photonRing = mesh;
+        this.bodyGroup.add(mesh);
+    }
 
-  /* ── 4. Accretion disk ── */
-  _buildAccretionDisk() {
-    const R  = this.radius;
-    const iR = R * 2.2;
-    const oR = R * 6.8;
+    /* ── 4. Accretion disk ── */
+    _buildAccretionDisk() {
+        const R = this.radius;
+        const iR = R * 2.2;
+        const oR = R * 6.8;
 
-    const geo = new THREE.RingGeometry(iR, oR, 128, 14);
-    const mat = new THREE.ShaderMaterial({
-      uniforms: {
-        uTime:   { value: 0 },
-        uInnerR: { value: iR },
-        uOuterR: { value: oR },
-      },
-      vertexShader: /* glsl */`
+        const geo = new THREE.RingGeometry(iR, oR, 128, 14);
+        const mat = new THREE.ShaderMaterial({
+            uniforms: {
+                uTime: { value: 0 },
+                uInnerR: { value: iR },
+                uOuterR: { value: oR },
+            },
+            vertexShader: /* glsl */`
         varying vec3 vPos;
         void main() {
           vPos        = position;
           gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
         }
       `,
-      fragmentShader: /* glsl */`
+            fragmentShader: /* glsl */`
         uniform float uTime;
         uniform float uInnerR;
         uniform float uOuterR;
@@ -224,26 +235,26 @@ export class Singularity {
           gl_FragColor = vec4(col, alpha);
         }
       `,
-      transparent: true,
-      depthWrite:  false,
-      blending:    THREE.AdditiveBlending,
-      side:        THREE.DoubleSide,
-    });
+            transparent: true,
+            depthWrite: false,
+            blending: THREE.AdditiveBlending,
+            side: THREE.DoubleSide,
+        });
 
-    const mesh = new THREE.Mesh(geo, mat);
-    mesh.rotation.x = Math.PI * 0.28;
-    this._diskMat  = mat;
-    this._diskMesh = mesh;
-    this._shaderMats.push(mat);
-    this.bodyGroup.add(mesh);
-  }
+        const mesh = new THREE.Mesh(geo, mat);
+        mesh.rotation.x = Math.PI * 0.28;
+        this._diskMat = mat;
+        this._diskMesh = mesh;
+        this._shaderMats.push(mat);
+        this.bodyGroup.add(mesh);
+    }
 
-  /* ── 5. Outer halo ── */
-  _buildOuterHalo() {
-    const geo = new THREE.SphereGeometry(this.radius * 5.5, 32, 32);
-    const mat = new THREE.ShaderMaterial({
-      uniforms: { uTime: { value: 0 } },
-      vertexShader: /* glsl */`
+    /* ── 5. Outer halo ── */
+    _buildOuterHalo() {
+        const geo = new THREE.SphereGeometry(this.radius * 5.5, 32, 32);
+        const mat = new THREE.ShaderMaterial({
+            uniforms: { uTime: { value: 0 } },
+            vertexShader: /* glsl */`
         varying vec3 vNormal;
         varying vec3 vViewDir;
         void main() {
@@ -253,7 +264,7 @@ export class Singularity {
           gl_Position = projectionMatrix * mv;
         }
       `,
-      fragmentShader: /* glsl */`
+            fragmentShader: /* glsl */`
         uniform float uTime;
         varying vec3  vNormal;
         varying vec3  vViewDir;
@@ -274,29 +285,29 @@ export class Singularity {
           gl_FragColor = vec4(col, (halo + wave) * pulse);
         }
       `,
-      transparent: true,
-      depthWrite:  false,
-      blending:    THREE.AdditiveBlending,
-      side:        THREE.FrontSide,
-    });
-    this._shaderMats.push(mat);
-    this.bodyGroup.add(new THREE.Mesh(geo, mat));
-  }
+            transparent: true,
+            depthWrite: false,
+            blending: THREE.AdditiveBlending,
+            side: THREE.FrontSide,
+        });
+        this._shaderMats.push(mat);
+        this.bodyGroup.add(new THREE.Mesh(geo, mat));
+    }
 
-  /* ── Interfaccia pianeta ── */
-  getWorldPosition() {
-    const v = new THREE.Vector3();
-    this.bodyGroup.getWorldPosition(v);
-    return v;
-  }
+    /* ── Interfaccia pianeta ── */
+    getWorldPosition() {
+        const v = new THREE.Vector3();
+        this.bodyGroup.getWorldPosition(v);
+        return v;
+    }
 
-  freezeOrbit()          { }
-  unfreezeOrbit()        { }
-  highlight(_on)         { }
-  updateSunDirection(_s) { }
+    freezeOrbit() { }
+    unfreezeOrbit() { }
+    highlight(_on) { }
+    updateSunDirection(_s) { }
 
-  update(time, _delta) {
-    this.bodyGroup.rotation.y = time * this.rotSpeed;
-    this._shaderMats.forEach(m => { m.uniforms.uTime.value = time; });
-  }
+    update(time, _delta) {
+        this.bodyGroup.rotation.y = time * this.rotSpeed;
+        this._shaderMats.forEach(m => { m.uniforms.uTime.value = time; });
+    }
 }
