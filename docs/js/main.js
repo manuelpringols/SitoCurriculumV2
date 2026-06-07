@@ -2,34 +2,34 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
 import { DeviceManager } from './utils/DeviceManager.js';
-import { Universe }      from './scene/Universe.js';
-import { MilkyWay }      from './scene/MilkyWay.js';
-import { Sun }           from './planets/Sun.js';
-import { Earth }         from './planets/Earth.js';
-import { Mars }          from './planets/Mars.js';
-import { Saturn }        from './planets/Saturn.js';
-import { Neptune }       from './planets/Neptune.js';
-import { Jupiter }       from './planets/Jupiter.js';
-import { Mercury }       from './planets/Mercury.js';
-import { PostFX }        from './effects/PostFX.js';
-import { SECTIONS }      from './data.js';
-import { PANEL_DATA }    from './panelData.js';
-
+import { Universe } from './scene/Universe.js';
+import { MilkyWay } from './scene/MilkyWay.js';
+import { Sun } from './planets/Sun.js';
+import { Earth } from './planets/Earth.js';
+import { Mars } from './planets/Mars.js';
+import { Saturn } from './planets/Saturn.js';
+import { Neptune } from './planets/Neptune.js';
+import { Jupiter } from './planets/Jupiter.js';
+import { Mercury } from './planets/Mercury.js';
+import { PostFX } from './effects/PostFX.js';
+import { SECTIONS } from './data.js';
+import { PANEL_DATA } from './panelData.js';
+import { Singularity } from './planets/Singularity.js';
 class App {
   constructor() {
-    this.device        = new DeviceManager();
-    this.planets       = [];
-    this.raycaster     = new THREE.Raycaster();
-    this.pointer       = new THREE.Vector2(-10, -10);
-    this._hovered      = null;
-    this._clock        = new THREE.Clock();
+    this.device = new DeviceManager();
+    this.planets = [];
+    this.raycaster = new THREE.Raycaster();
+    this.pointer = new THREE.Vector2(-10, -10);
+    this._hovered = null;
+    this._clock = new THREE.Clock();
     this._lockedPlanet = null;
-    this._zooming      = false;
-    this._glitch       = null;
-    this._booting      = true;
-    this._mouseX       = 0;
-    this._mouseY       = 0;
-    this._onSun        = false;
+    this._zooming = false;
+    this._glitch = null;
+    this._booting = true;
+    this._mouseX = 0;
+    this._mouseY = 0;
+    this._onSun = false;
 
     this._init();
   }
@@ -57,15 +57,15 @@ class App {
     const canvas = document.getElementById('canvas');
     this.renderer = new THREE.WebGLRenderer({
       canvas,
-      antialias:       this.device.antialias,
+      antialias: this.device.antialias,
       powerPreference: this.device.isMobile ? 'low-power' : 'high-performance',
     });
     this.renderer.setPixelRatio(this.device.pixelRatio);
     this.renderer.setSize(window.innerWidth, window.innerHeight);
-    this.renderer.outputColorSpace    = THREE.SRGBColorSpace;
-    this.renderer.toneMapping         = THREE.ACESFilmicToneMapping;
+    this.renderer.outputColorSpace = THREE.SRGBColorSpace;
+    this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     this.renderer.toneMappingExposure = 0.60;
-    this.renderer.shadowMap.enabled   = false;
+    this.renderer.shadowMap.enabled = false;
   }
 
   /* ══════════════════════════════ CAMERA ══════════════════════════════ */
@@ -79,18 +79,18 @@ class App {
 
   _setupControls() {
     this.controls = new OrbitControls(this.camera, this.renderer.domElement);
-    this.controls.enableDamping      = true;
-    this.controls.dampingFactor      = 0.055;
-    this.controls.minDistance        = this.device.isMobile ? 60 : 50;
-    this.controls.maxDistance        = this.device.isMobile ? 3200 : 3800;
-    this.controls.autoRotate         = true;
-    this.controls.autoRotateSpeed    = 0.15;
-    this.controls.enablePan          = true;
-    this.controls.panSpeed           = 0.6;
+    this.controls.enableDamping = true;
+    this.controls.dampingFactor = 0.055;
+    this.controls.minDistance = this.device.isMobile ? 60 : 50;
+    this.controls.maxDistance = this.device.isMobile ? 3200 : 3800;
+    this.controls.autoRotate = true;
+    this.controls.autoRotateSpeed = 0.15;
+    this.controls.enablePan = true;
+    this.controls.panSpeed = 0.6;
     this.controls.screenSpacePanning = false;
-    this.controls.maxTargetRadius    = 120;
-    this.controls.minPolarAngle      = Math.PI * 0.05;
-    this.controls.maxPolarAngle      = Math.PI * 0.95;
+    this.controls.maxTargetRadius = 120;
+    this.controls.minPolarAngle = Math.PI * 0.05;
+    this.controls.maxPolarAngle = Math.PI * 0.95;
     this.controls.touches = {
       ONE: THREE.TOUCH.ROTATE,
       TWO: THREE.TOUCH.DOLLY_ROTATE,
@@ -99,27 +99,43 @@ class App {
 
   /* ══════════════════════════════ SCENA ═══════════════════════════════ */
   _setupScene() {
-    this.scene    = new THREE.Scene();
+    this.scene = new THREE.Scene();
     this.universe = new Universe(this.scene, this.device);
     this.milkyWay = new MilkyWay(this.scene, this.device);
-    this.sun      = new Sun(this.scene);
+    this.sun = new Sun(this.scene);
     this._spawnPlanets();
   }
 
   _spawnPlanets() {
     const defs = [
-      { Class: Earth,   key: 'chisono',    name: SECTIONS.chisono.title,
-        radius: 36, orbitRadius: 510,  orbitSpeed: 0.28, rotSpeed: 0.40, inclination: 0.04 },
-      { Class: Mars,    key: 'esperienze', name: SECTIONS.esperienze.title,
-        radius: 40, orbitRadius: 660,  orbitSpeed: 0.20, rotSpeed: 0.45, inclination: 0.07 },
-      { Class: Saturn,  key: 'istruzione', name: SECTIONS.istruzione.title,
-        radius: 52, orbitRadius: 900,  orbitSpeed: 0.14, rotSpeed: 0.38, inclination: 0.03 },
-      { Class: Neptune, key: 'competenze', name: SECTIONS.competenze.title,
-        radius: 46, orbitRadius: 1150, orbitSpeed: 0.09, rotSpeed: 0.42, inclination: 0.05 },
-      { Class: Jupiter, key: 'devops',     name: SECTIONS.devops.title,
-        radius: 56, orbitRadius: 1330, orbitSpeed: 0.065, rotSpeed: 0.55, inclination: 0.03 },
-      { Class: Mercury, key: 'contatti',   name: SECTIONS.contatti.title,
-        radius: 26, orbitRadius: 1490, orbitSpeed: 0.045, rotSpeed: 0.30, inclination: 0.02 },
+      {
+        Class: Earth, key: 'chisono', name: SECTIONS.chisono.title,
+        radius: 36, orbitRadius: 510, orbitSpeed: 0.28, rotSpeed: 0.40, inclination: 0.04
+      },
+      {
+        Class: Mars, key: 'esperienze', name: SECTIONS.esperienze.title,
+        radius: 40, orbitRadius: 660, orbitSpeed: 0.20, rotSpeed: 0.45, inclination: 0.07
+      },
+      {
+        Class: Saturn, key: 'istruzione', name: SECTIONS.istruzione.title,
+        radius: 52, orbitRadius: 900, orbitSpeed: 0.14, rotSpeed: 0.38, inclination: 0.03
+      },
+      {
+        Class: Neptune, key: 'competenze', name: SECTIONS.competenze.title,
+        radius: 46, orbitRadius: 1150, orbitSpeed: 0.09, rotSpeed: 0.42, inclination: 0.05
+      },
+      {
+        Class: Jupiter, key: 'devops', name: SECTIONS.devops.title,
+        radius: 56, orbitRadius: 1330, orbitSpeed: 0.065, rotSpeed: 0.55, inclination: 0.03
+      },
+      {
+        Class: Mercury, key: 'contatti', name: SECTIONS.contatti.title,
+        radius: 26, orbitRadius: 1490, orbitSpeed: 0.045, rotSpeed: 0.30, inclination: 0.02
+      },
+      {
+        Class: Singularity, key: 'singularity', name: 'Genesi',
+        radius: 28, rotSpeed: 0.04
+      },
     ];
 
     const hud = document.getElementById('hud');
@@ -133,7 +149,7 @@ class App {
         sectionKey: def.key,
       });
       p.mesh.userData.sectionKey = def.key;
-      p.mesh.userData.planetRef  = p;
+      p.mesh.userData.planetRef = p;
       this.planets.push(p);
 
       // ── Label sempre visibile per questo pianeta ──
@@ -160,13 +176,13 @@ class App {
     if (this._zooming) return;
     this._zooming = true;
 
-    this.controls.enabled    = false;
+    this.controls.enabled = false;
     this.controls.autoRotate = false;
     this._hideLabel();
 
     planet.freezeOrbit();
 
-    planet._scaleTarget  = 1.0;
+    planet._scaleTarget = 1.0;
     planet._scaleCurrent = 1.0;
     planet.bodyGroup.scale.setScalar(1.0);
 
@@ -175,21 +191,21 @@ class App {
 
     anime.remove('#title-block');
     anime({
-      targets:    '#title-block',
-      opacity:    0,
+      targets: '#title-block',
+      opacity: 0,
       translateY: -20,
-      duration:   400,
-      easing:     'easeInCubic',
+      duration: 400,
+      easing: 'easeInCubic',
     });
 
     anime.remove('#hint-block');
     anime({
-      targets:    '#hint-block',
-      opacity:    0,
+      targets: '#hint-block',
+      opacity: 0,
       translateX: '-50%',
       translateY: 10,
-      duration:   300,
-      easing:     'easeInCubic',
+      duration: 300,
+      easing: 'easeInCubic',
       complete: () => {
         const h = document.getElementById('hint-block');
         if (h) h.style.pointerEvents = 'none';
@@ -197,7 +213,7 @@ class App {
     });
 
     const planetPos = planet.getWorldPosition();
-    const zoomDist  = planet.radius * 4.5;
+    const zoomDist = planet.radius * 4.5;
 
     const dir = new THREE.Vector3()
       .subVectors(this.camera.position, planetPos)
@@ -239,7 +255,7 @@ class App {
       },
       complete: () => {
         this._lockedPlanet = planet;
-        this._zooming      = false;
+        this._zooming = false;
         this._showBackHint();
 
         const k = planet.mesh.userData.sectionKey;
@@ -261,29 +277,29 @@ class App {
 
     anime.remove('#title-block');
     anime({
-      targets:    '#title-block',
-      opacity:    1,
+      targets: '#title-block',
+      opacity: 1,
       translateY: 0,
-      duration:   700,
-      easing:     'easeOutCubic',
+      duration: 700,
+      easing: 'easeOutCubic',
     });
 
     anime.remove('#hint-block');
     const hintEl = document.getElementById('hint-block');
     if (hintEl) hintEl.style.pointerEvents = '';
     anime({
-      targets:    '#hint-block',
-      opacity:    0.85,
+      targets: '#hint-block',
+      opacity: 0.85,
       translateX: '-50%',
       translateY: 0,
-      duration:   800,
-      delay:      400,
-      easing:     'easeOutCubic',
+      duration: 800,
+      delay: 400,
+      easing: 'easeOutCubic',
     });
 
     const startCamPos = this.camera.position.clone();
     const startTarget = this.controls.target.clone();
-    const endCamPos   = new THREE.Vector3(0, 300, this.device.isMobile ? 1670 : 1340);
+    const endCamPos = new THREE.Vector3(0, 300, this.device.isMobile ? 1670 : 1340);
 
     const camProxy = { x: startCamPos.x, y: startCamPos.y, z: startCamPos.z };
     const tgtProxy = { x: startTarget.x, y: startTarget.y, z: startTarget.z };
@@ -308,7 +324,7 @@ class App {
         this.camera.lookAt(tgtProxy.x, tgtProxy.y, tgtProxy.z);
       },
       complete: () => {
-        this.controls.enabled    = true;
+        this.controls.enabled = true;
         this.controls.autoRotate = true;
         this._zooming = false;
       },
@@ -326,7 +342,7 @@ class App {
   _updateLockedLabel() {
     if (!this._lockedPlanet) return;
 
-    const planet    = this._lockedPlanet;
+    const planet = this._lockedPlanet;
     const planetPos = planet.getWorldPosition();
 
     const abovePos = planetPos.clone();
@@ -335,16 +351,16 @@ class App {
     const projected = abovePos.clone().project(this.camera);
     if (projected.z > 1) return;
 
-    const x = ( projected.x * 0.5 + 0.5) * window.innerWidth;
+    const x = (projected.x * 0.5 + 0.5) * window.innerWidth;
     const y = (-projected.y * 0.5 + 0.5) * window.innerHeight;
 
-    const el  = document.getElementById('planet-label');
+    const el = document.getElementById('planet-label');
     const key = planet.mesh.userData.sectionKey;
 
     this._setLabelText(key);
     el.classList.remove('hidden');
-    el.style.left      = `${x}px`;
-    el.style.top       = `${y}px`;
+    el.style.left = `${x}px`;
+    el.style.top = `${y}px`;
     el.style.transform = 'translate(-50%, -100%)';
   }
 
@@ -362,7 +378,7 @@ class App {
       }
 
       const planetPos = p.getWorldPosition();
-      const abovePos  = planetPos.clone();
+      const abovePos = planetPos.clone();
       abovePos.y += p.radius * 2.2;
 
       const projected = abovePos.clone().project(this.camera);
@@ -372,11 +388,11 @@ class App {
         return;
       }
 
-      const x = ( projected.x * 0.5 + 0.5) * window.innerWidth;
+      const x = (projected.x * 0.5 + 0.5) * window.innerWidth;
       const y = (-projected.y * 0.5 + 0.5) * window.innerHeight;
 
       p._tag.style.left = `${x}px`;
-      p._tag.style.top  = `${y}px`;
+      p._tag.style.top = `${y}px`;
       p._tag.classList.remove('planet-tag--hidden');
       p._tag.classList.toggle('planet-tag--active', p === this._hovered);
     });
@@ -403,7 +419,7 @@ class App {
 
   _setupGlitch() {
     if (typeof Glitchium === 'undefined') return;
-    this._glitch   = new Glitchium();
+    this._glitch = new Glitchium();
     this._bodyCtrl = null;
   }
 
@@ -413,9 +429,9 @@ class App {
 
   _scramble(el, finalText, duration = 450, density = 1.0, onComplete = null) {
     const CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789#@!%&';
-    const FPS   = 30;
+    const FPS = 30;
     const steps = Math.round((duration / 1000) * FPS);
-    let   step  = 0;
+    let step = 0;
 
     const rnd = () => CHARS[Math.floor(Math.random() * CHARS.length)];
 
@@ -431,9 +447,9 @@ class App {
       const revealed = Math.floor(progress * finalText.length);
 
       el.textContent = finalText.split('').map((ch, i) => {
-        if (i < revealed)             return ch;
+        if (i < revealed) return ch;
         if (ch === ' ' || ch === '') return ch;
-        if (Math.random() > density)  return ch;
+        if (Math.random() > density) return ch;
         return rnd();
       }).join('');
 
@@ -448,17 +464,17 @@ class App {
     if (!this._glitch || this._bodyCtrl) return;
     try {
       this._bodyCtrl = this._glitch.glitch('#detail-body', {
-        playMode:         'manual',
-        intensity:         0.60,
-        fps:               24,
-        layers:            6,
+        playMode: 'manual',
+        intensity: 0.60,
+        fps: 24,
+        layers: 6,
         smoothTransitions: true,
-        glitchFrequency:   8,
-        shake:             false,
-        hideOverflow:      true,
+        glitchFrequency: 8,
+        shake: false,
+        hideOverflow: true,
         slice: { minHeight: 0.01, maxHeight: 0.20, hueRotate: false },
       });
-    } catch(e) { console.warn('[Glitchium body]', e); }
+    } catch (e) { console.warn('[Glitchium body]', e); }
   }
 
   _glitchDetailPanel() {
@@ -467,8 +483,8 @@ class App {
     if (this._bodyCtrl) {
       try {
         this._bodyCtrl.start();
-        setTimeout(() => { try { this._bodyCtrl.stop(); } catch(e){} }, 600);
-      } catch(e) { console.warn('[Glitchium body start]', e); }
+        setTimeout(() => { try { this._bodyCtrl.stop(); } catch (e) { } }, 600);
+      } catch (e) { console.warn('[Glitchium body start]', e); }
     }
   }
 
@@ -476,25 +492,25 @@ class App {
 
   _openPanel(sectionKey) {
     const section = SECTIONS[sectionKey];
-    const data    = PANEL_DATA[sectionKey];
+    const data = PANEL_DATA[sectionKey];
     if (!section || !data) return;
 
     const panel = document.getElementById('content-panel');
     panel.classList.remove('hidden', 'closing', 'nav-hidden');
-    panel.style.opacity   = '';
+    panel.style.opacity = '';
     panel.style.transform = '';
 
     document.getElementById('panel-planet-name').textContent =
       (section.planet ?? '').toUpperCase();
     document.getElementById('panel-section-title').textContent =
-      (section.title  ?? '').toUpperCase();
+      (section.title ?? '').toUpperCase();
 
     const body = document.getElementById('panel-body');
     body.innerHTML = `
       <div id="panel-tabs">
         ${data.tabs.map((t, i) =>
-          `<button class="p-tab${i===0?' active':''}" data-tab="${i}">${t.label}</button>`
-        ).join('')}
+      `<button class="p-tab${i === 0 ? ' active' : ''}" data-tab="${i}">${t.label}</button>`
+    ).join('')}
       </div>
       <div class="p-content-area"></div>
     `;
@@ -519,11 +535,11 @@ class App {
   }
 
   _renderSubitems(body, data, tabIdx) {
-    const area  = body.querySelector('.p-content-area');
+    const area = body.querySelector('.p-content-area');
     const items = data.tabs[tabIdx].items;
 
     area.innerHTML = items.map((item, i) => `
-      <div class="p-subitem" data-item="${i}" style="animation-delay:${i*0.06}s">
+      <div class="p-subitem" data-item="${i}" style="animation-delay:${i * 0.06}s">
         <span class="p-subitem-title"></span>
         <span class="p-subitem-arrow">›</span>
       </div>
@@ -550,10 +566,10 @@ class App {
 
   /* ── Pannello dettaglio sinistro ── */
   _openDetailPanel(item, onBack) {
-    const panel   = document.getElementById('detail-panel');
+    const panel = document.getElementById('detail-panel');
     const titleEl = document.getElementById('detail-title');
-    const bodyEl  = document.getElementById('detail-body');
-    const isOpen  = !panel.classList.contains('hidden');
+    const bodyEl = document.getElementById('detail-body');
+    const isOpen = !panel.classList.contains('hidden');
 
     const wireBack = () => {
       const backBtn = document.getElementById('detail-back');
@@ -572,11 +588,11 @@ class App {
     const openDetail = () => {
       if (!isOpen) {
         panel.classList.remove('hidden', 'closing');
-        panel.style.clipPath   = 'inset(0% 0 0% 0)';
-        panel.style.opacity    = '0';
+        panel.style.clipPath = 'inset(0% 0 0% 0)';
+        panel.style.opacity = '0';
         panel.style.transition = 'opacity 0.25s ease';
         titleEl.textContent = '';
-        bodyEl.textContent  = '';
+        bodyEl.textContent = '';
         wireBack();
         void panel.offsetWidth;
         panel.style.opacity = '1';
@@ -584,11 +600,11 @@ class App {
 
       } else {
         this._initBodyGlitch();
-        if (this._bodyCtrl) try { this._bodyCtrl.start(); } catch(e) {}
+        if (this._bodyCtrl) try { this._bodyCtrl.start(); } catch (e) { }
 
         setTimeout(() => {
           titleEl.textContent = '';
-          bodyEl.textContent  = '';
+          bodyEl.textContent = '';
           wireBack();
           const sl = document.getElementById('detail-scanline');
           sl.style.animation = 'none';
@@ -597,7 +613,7 @@ class App {
         }, 220);
 
         setTimeout(() => {
-          if (this._bodyCtrl) try { this._bodyCtrl.stop(); } catch(e) {}
+          if (this._bodyCtrl) try { this._bodyCtrl.stop(); } catch (e) { }
           doScramble();
         }, 660);
       }
@@ -610,20 +626,20 @@ class App {
       if (!alreadyHidden) {
         anime.remove('#title-block');
         anime({
-          targets:    '#title-block',
-          opacity:    0,
+          targets: '#title-block',
+          opacity: 0,
           translateY: -16,
-          duration:   220,
-          easing:     'easeInCubic',
+          duration: 220,
+          easing: 'easeInCubic',
         });
 
         anime.remove(nav);
         anime({
-          targets:    nav,
-          opacity:    0,
+          targets: nav,
+          opacity: 0,
           translateY: 18,
-          duration:   240,
-          easing:     'easeInCubic',
+          duration: 240,
+          easing: 'easeInCubic',
           complete: () => {
             nav.style.pointerEvents = 'none';
             nav.classList.add('nav-hidden');
@@ -658,12 +674,12 @@ class App {
       nav.style.transform = 'translateY(18px)';
       anime.remove(nav);
       anime({
-        targets:    nav,
-        opacity:    1,
+        targets: nav,
+        opacity: 1,
         translateY: 0,
-        duration:   320,
-        delay:      120,
-        easing:     'easeOutCubic',
+        duration: 320,
+        delay: 120,
+        easing: 'easeOutCubic',
       });
     }
   }
@@ -671,13 +687,13 @@ class App {
   _animateContent(body, renderFn) {
     const area = body.querySelector('.p-content-area');
     area.style.transition = 'opacity 0.15s ease, transform 0.15s ease';
-    area.style.opacity    = '0';
-    area.style.transform  = 'translateX(8px)';
+    area.style.opacity = '0';
+    area.style.transform = 'translateX(8px)';
     setTimeout(() => {
       renderFn();
       area.style.transform = 'translateX(-8px)';
       requestAnimationFrame(() => {
-        area.style.opacity   = '1';
+        area.style.opacity = '1';
         area.style.transform = 'translateX(0)';
       });
     }, 160);
@@ -688,7 +704,7 @@ class App {
     const panel = document.getElementById('content-panel');
     if (panel.classList.contains('hidden')) return;
     panel.classList.remove('nav-hidden');
-    panel.style.opacity   = '';
+    panel.style.opacity = '';
     panel.style.transform = '';
     panel.classList.remove('opening');
     panel.classList.add('closing');
@@ -704,10 +720,10 @@ class App {
     const canvas = this.renderer.domElement;
 
     window.addEventListener('mousemove', (e) => {
-      this._mouseX    =  e.clientX;
-      this._mouseY    =  e.clientY;
-      this.pointer.x  =  (e.clientX / window.innerWidth)  * 2 - 1;
-      this.pointer.y  = -(e.clientY / window.innerHeight) * 2 + 1;
+      this._mouseX = e.clientX;
+      this._mouseY = e.clientY;
+      this.pointer.x = (e.clientX / window.innerWidth) * 2 - 1;
+      this.pointer.y = -(e.clientY / window.innerHeight) * 2 + 1;
     });
 
     canvas.addEventListener('click', () => this._onClick());
@@ -715,7 +731,7 @@ class App {
     canvas.addEventListener('touchend', (e) => {
       if (e.changedTouches.length === 0) return;
       const t = e.changedTouches[0];
-      this.pointer.x =  (t.clientX / window.innerWidth)  * 2 - 1;
+      this.pointer.x = (t.clientX / window.innerWidth) * 2 - 1;
       this.pointer.y = -(t.clientY / window.innerHeight) * 2 + 1;
       this._onClick();
     }, { passive: true });
@@ -732,8 +748,8 @@ class App {
   }
 
   _onClick() {
-    if (this._booting)  return;
-    if (this._zooming)  return;
+    if (this._booting) return;
+    if (this._zooming) return;
 
     if (this._lockedPlanet) {
       if (this.device.isMobile) this._returnToFree();
@@ -780,36 +796,36 @@ class App {
 
   _showFloatingLabel(sectionKey, planet) {
     const planetPos = planet.getWorldPosition();
-    const abovePos  = planetPos.clone();
+    const abovePos = planetPos.clone();
     abovePos.y += planet.radius * 1.5;
 
     const projected = abovePos.clone().project(this.camera);
     if (projected.z > 1) return;
 
-    const x = ( projected.x * 0.5 + 0.5) * window.innerWidth;
+    const x = (projected.x * 0.5 + 0.5) * window.innerWidth;
     const y = (-projected.y * 0.5 + 0.5) * window.innerHeight;
 
     const el = document.getElementById('planet-label');
     this._setLabelText(sectionKey);
     el.classList.remove('hidden');
-    el.style.left      = `${x}px`;
-    el.style.top       = `${y}px`;
+    el.style.left = `${x}px`;
+    el.style.top = `${y}px`;
     el.style.transform = 'translate(-50%, -100%)';
   }
 
   _updateHoverLabel() {
     if (!this._hovered || this._lockedPlanet || this._zooming) return;
-    const planet    = this._hovered;
+    const planet = this._hovered;
     const planetPos = planet.getWorldPosition();
-    const abovePos  = planetPos.clone();
+    const abovePos = planetPos.clone();
     abovePos.y += planet.radius * 1.5;
     const projected = abovePos.clone().project(this.camera);
     if (projected.z > 1) return;
-    const x = ( projected.x * 0.5 + 0.5) * window.innerWidth;
+    const x = (projected.x * 0.5 + 0.5) * window.innerWidth;
     const y = (-projected.y * 0.5 + 0.5) * window.innerHeight;
     const el = document.getElementById('planet-label');
-    el.style.left      = `${x}px`;
-    el.style.top       = `${y}px`;
+    el.style.left = `${x}px`;
+    el.style.top = `${y}px`;
     el.style.transform = 'translate(-50%, -100%)';
   }
 
@@ -868,23 +884,23 @@ class App {
     }
 
     const projected = new THREE.Vector3(0, 0, 0).project(this.camera);
-    const sx = ( projected.x * 0.5 + 0.5) * window.innerWidth;
+    const sx = (projected.x * 0.5 + 0.5) * window.innerWidth;
     const sy = (-projected.y * 0.5 + 0.5) * window.innerHeight;
     const edgePx = new THREE.Vector3(200, 0, 0).project(this.camera);
-    const ex  = ( edgePx.x * 0.5 + 0.5) * window.innerWidth;
+    const ex = (edgePx.x * 0.5 + 0.5) * window.innerWidth;
     const sunR = Math.abs(ex - sx);
     const onSun = Math.hypot(this._mouseX - sx, this._mouseY - sy) < sunR;
 
     const onPlanet = !onSun && this._hovered !== null;
     const planetColor = onPlanet && this._hovered?.atmosphereColor
-      ? '#' + this._hovered.atmosphereColor.toString(16).padStart(6,'0')
+      ? '#' + this._hovered.atmosphereColor.toString(16).padStart(6, '0')
       : null;
 
-    const wasOnSun    = el.classList.contains('on-sun');
+    const wasOnSun = el.classList.contains('on-sun');
     const wasOnPlanet = el.classList.contains('on-planet');
 
     if (onSun !== wasOnSun || onPlanet !== wasOnPlanet) {
-      el.classList.toggle('on-sun',    onSun);
+      el.classList.toggle('on-sun', onSun);
       el.classList.toggle('on-planet', onPlanet);
       if (onPlanet && planetColor) {
         el.style.setProperty('--planet-color', planetColor);
@@ -898,7 +914,7 @@ class App {
     requestAnimationFrame(() => this._loop());
 
     const delta = Math.min(this._clock.getDelta(), 0.05);
-    const time  = this._clock.elapsedTime;
+    const time = this._clock.elapsedTime;
 
     this.universe.update(time);
     this.milkyWay.update(time);

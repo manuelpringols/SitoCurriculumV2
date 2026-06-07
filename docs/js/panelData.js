@@ -139,4 +139,26 @@ export const PANEL_DATA = {
     ]},
   ]},
 
+  /* ─── SINGULARITY — Genesi ─── */
+singularity: { tabs: [
+  { label: 'Genesi', items: [
+    { title: 'Come è nato questo sito',
+      body: `Questo portfolio non sarebbe esistito in questa forma senza Claude.\n\nL'idea di partenza era semplice: un portfolio diverso, qualcosa che si ricordasse. La forma — un sistema solare 3D navigabile con shader GLSL, pannelli olografici e un buco nero nascosto — è emersa da centinaia di scambi con un modello di AI generativa.\n\nNon è stato un processo di copia-incolla. È stato un dialogo tecnico reale: io portavo l'architettura, le decisioni, i vincoli. Claude portava implementazioni, alternative, debugging. Il codice che gira su questo sito è il risultato di quella collaborazione.\n\nÈ anche un esperimento: dimostrare cosa diventa possibile quando uno sviluppatore sa esattamente cosa sta chiedendo — e sa leggere la risposta.` },
+    { title: 'Il metodo',
+      body: `Lavorare con l'AI nel modo giusto non significa chiedere e copiare.\n\nSignifica:\n\n• Sapere già cosa vuoi ottenere prima di scrivere il prompt\n• Capire il codice generato, non solo eseguirlo\n• Sapere quando l'output è sbagliato — e perché\n• Iterare con precisione chirurgica, non a tentativi\n\nSe non capisci il codice che ti viene restituito, non sei più uno sviluppatore che usa un tool. Sei uno che esegue output di una black box. Quella distinzione è tutto.\n\n**Il modello amplifica le competenze che hai già. Non le sostituisce.**` },
+  ]},
+  { label: 'Potenziale', items: [
+    { title: 'AI come moltiplicatore',
+      body: `L'AI generativa è probabilmente il più potente moltiplicatore di produttività che uno sviluppatore abbia mai avuto a disposizione.\n\nUno sviluppatore senior che usa AI bene può fare il lavoro di un piccolo team. Un junior che la usa male può fare danni difficili da rilevare.\n\nLa differenza non è nello strumento. È nel livello di comprensione che ci porti sopra:\n\n• Sai progettare un'architettura → l'AI ti aiuta a implementarla in un decimo del tempo\n• Sai fare code review → l'AI diventa un pair programmer che non si stanca\n• Sai cosa cercare in un bug → l'AI ti porta la soluzione in secondi\n\nSenza quella base, lo stesso strumento produce output che sembrano corretti ma non lo sono.` },
+    { title: 'Cosa cambia davvero',
+      body: `La velocità è la parte ovvia. Ma non è la più importante.\n\nCiò che cambia davvero con l'AI nel flusso di lavoro è la possibilità di esplorare spazi che prima erano proibitivi per tempo o complessità.\n\nQuesto sito ha shader GLSL custom, un sistema solare a 6 pianeti con fisica, effetti post-processing con bloom e tone mapping ACES, un buco nero con simulazione di lensing gravitazionale.\n\nSenza AI, sarebbe stato un progetto da sei mesi full-time. Con AI e la giusta base tecnica, è diventato qualcosa che ha preso forma in settimane — senza mai perdere il controllo su cosa stava girando sotto il cofano.\n\nÈ questo il vero cambio: **non fare di meno, fare cose che prima erano fuori portata.**` },
+  ]},
+  { label: 'Rischi', items: [
+    { title: 'Vulnerabilità',
+      body: `L'AI scrive codice vulnerabile con la stessa sicurezza con cui scrive codice corretto.\n\nNon sa distinguere tra i due. Non ha contesto di produzione, non sa quali dati passano per quel campo, non sa che quella query va in un database con dati sensibili.\n\nAlcune delle vulnerabilità più comuni introdotte da codice AI non revisionato:\n\n• SQL injection da query costruite dinamicamente senza sanitizzazione\n• Chiavi API e segreti hardcoded nel codice sorgente\n• Endpoint REST senza autenticazione o con autorizzazione bypassabile\n• Dipendenze npm con CVE noti, installate senza controllo\n• Logica di autenticazione con race condition o token mal gestiti\n\nTutte prodotte da modelli che hanno generato migliaia di token corretti prima di quella riga. **Il codice che non capisci è codice che non puoi difendere.**` },
+    { title: 'La regola d\'oro',
+      body: `L'AI generativa è uno strumento. Come tutti gli strumenti, il risultato dipende da chi lo usa e come.\n\nUna motosega in mano a un falegname esperto taglia tavole precise. In mano a qualcuno senza training, è un pericolo.\n\nLa regola è semplice:\n\n**Non mettere in produzione codice che non sei in grado di spiegare riga per riga.**\n\nNon perché l'AI sbagli spesso — spesso è precisa. Ma perché quando sbaglia, sbaglia in modo non ovvio. E perché sei tu, non il modello, a rispondere di quello che gira sui tuoi server.\n\nUsata con questa consapevolezza, l'AI è il miglior strumento che uno sviluppatore abbia mai avuto. Usata senza, è un debito tecnico e di sicurezza che si accumula silenziosamente.` },
+  ]},
+]},
+
 };

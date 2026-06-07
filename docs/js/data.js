@@ -3,19 +3,19 @@
  */
 
 export const ME = {
-  nome:     'Manuel Cerqua',
-  titolo:   'Junior Software Developer',
-  email:    'manuelpringols@gmail.com',
+  nome: 'Manuel Cerqua',
+  titolo: 'Junior Software Developer',
+  email: 'manuelpringols@gmail.com',
   linkedin: 'https://www.linkedin.com/in/manuelpringols',
-  website:  'https://manuelpringols.info',
+  website: 'https://manuelpringols.info',
 };
 
 export const SECTIONS = {
 
   chisono: {
-    title:    'Chi Sono',
-    planet:   'Earth',
-    icon:     '🌍',
+    title: 'Chi Sono',
+    planet: 'Earth',
+    icon: '🌍',
     content: `Sono Manuel Cerqua, sviluppatore con cinque anni di studio autonomo
 su documentazione ufficiale e libri tecnici. La passione per questo
 mondo è nata in adolescenza — ma le risorse e la motivazione giusta
@@ -24,14 +24,14 @@ in consulenza, con un occhio sempre puntato verso la cybersecurity.`,
   },
 
   esperienze: {
-    title:  'Esperienze',
+    title: 'Esperienze',
     planet: 'Mars',
-    icon:   '🔴',
+    icon: '🔴',
     items: [
       {
-        ruolo:   'Junior Software Developer',
+        ruolo: 'Junior Software Developer',
         azienda: 'Convergr (in consulenza per Accenture)',
-        luogo:   'Italia',
+        luogo: 'Italia',
         periodo: '2024 – presente',
         punti: [
           'Sviluppo e implementazione di workflow, workspace e logiche complesse su piattaforma ServiceNow.',
@@ -40,9 +40,9 @@ in consulenza, con un occhio sempre puntato verso la cybersecurity.`,
         ],
       },
       {
-        ruolo:   'Operaio Specializzato CNC',
+        ruolo: 'Operaio Specializzato CNC',
         azienda: 'Acciai Inox Srl',
-        luogo:   'Giugliano (NA)',
+        luogo: 'Giugliano (NA)',
         periodo: '2019 – 2024',
         punti: [
           'Programmazione e utilizzo di macchine CNC per la lavorazione dell\'acciaio inox.',
@@ -53,82 +53,86 @@ in consulenza, con un occhio sempre puntato verso la cybersecurity.`,
   },
 
   istruzione: {
-    title:  'Istruzione',
+    title: 'Istruzione',
     planet: 'Saturn',
-    icon:   '🪐',
+    icon: '🪐',
     items: [
       {
-        titolo:   'Diploma di Perito Industriale',
+        titolo: 'Diploma di Perito Industriale',
         istituto: 'ITS Galvani',
-        luogo:    'Giugliano (NA)',
-        periodo:  '2015 – 2020',
+        luogo: 'Giugliano (NA)',
+        periodo: '2015 – 2020',
       },
       {
-        titolo:   'Java Foundations Associate',
+        titolo: 'Java Foundations Associate',
         istituto: 'Oracle Certified',
-        luogo:    '',
-        periodo:  '',
+        luogo: '',
+        periodo: '',
       },
       {
-        titolo:   'Corsi completati: Spring Boot, Angular',
+        titolo: 'Corsi completati: Spring Boot, Angular',
         istituto: 'Udemy',
-        luogo:    '',
-        periodo:  '',
+        luogo: '',
+        periodo: '',
       },
       {
-        titolo:   'eJPT — in preparazione',
+        titolo: 'eJPT — in preparazione',
         istituto: 'eLearnSecurity / INE',
-        luogo:    '',
-        periodo:  'obiettivo prossimo',
+        luogo: '',
+        periodo: 'obiettivo prossimo',
       },
     ],
   },
 
   competenze: {
-    title:  'Competenze',
+    title: 'Competenze',
     planet: 'Neptune',
-    icon:   '🔵',
+    icon: '🔵',
     gruppi: [
-      { label: 'Linguaggi',       items: ['Java', 'JavaScript', 'SQL', 'HTML', 'CSS'] },
-      { label: 'Framework',       items: ['Spring Boot', 'Spring Security', 'ServiceNow'] },
-      { label: 'Database',        items: ['MySQL', 'PostgreSQL'] },
-      { label: 'DevOps & Tools',  items: ['Docker', 'Nginx', 'Git', 'Linux', 'WireGuard'] },
-      { label: 'Build',           items: ['Maven', 'npm'] },
+      { label: 'Linguaggi', items: ['Java', 'JavaScript', 'SQL', 'HTML', 'CSS'] },
+      { label: 'Framework', items: ['Spring Boot', 'Spring Security', 'ServiceNow'] },
+      { label: 'Database', items: ['MySQL', 'PostgreSQL'] },
+      { label: 'DevOps & Tools', items: ['Docker', 'Nginx', 'Git', 'Linux', 'WireGuard'] },
+      { label: 'Build', items: ['Maven', 'npm'] },
     ],
   },
 
   devops: {
-    title:  'Infra & Progetti',
+    title: 'Infra & Progetti',
     planet: 'Jupiter',
-    icon:   '🟠',
+    icon: '🟠',
     items: [
       {
         titolo: 'VPS — Hetzner & Netcup',
-        desc:   'Contratti VPS scelti in base al rapporto risorse/prezzo. Hosting di applicazioni e servizi tramite Docker Compose, routing con Nginx.',
+        desc: 'Contratti VPS scelti in base al rapporto risorse/prezzo. Hosting di applicazioni e servizi tramite Docker Compose, routing con Nginx.',
       },
       {
         titolo: 'WireGuard VPN',
-        desc:   'VPN configurata su server personale per mettere tutti i dispositivi di casa sulla stessa rete virtuale, raggiungibili da remoto senza aprire porte sul router.',
+        desc: 'VPN configurata su server personale per mettere tutti i dispositivi di casa sulla stessa rete virtuale, raggiungibili da remoto senza aprire porte sul router.',
       },
       {
         titolo: 'Marmitta',
-        desc:   'Tool personale che sfrutta curl con il flag per l\'esecuzione remota di codice bash. Progetto sperimentale su automazione e controllo remoto.',
+        desc: 'Tool personale che sfrutta curl con il flag per l\'esecuzione remota di codice bash. Progetto sperimentale su automazione e controllo remoto.',
       },
       {
         titolo: 'Jellyfin & altri servizi',
-        desc:   'Server multimediale self-hosted su VPS. Uno dei tanti progetti che hanno fatto da palestra per Linux, Docker e configurazione di rete.',
+        desc: 'Server multimediale self-hosted su VPS. Uno dei tanti progetti che hanno fatto da palestra per Linux, Docker e configurazione di rete.',
       },
     ],
   },
 
   contatti: {
-    title:  'Contatti',
+    title: 'Contatti',
     planet: 'Mercury',
-    icon:   '☿',
+    icon: '☿',
     links: [
-      { label: 'Email',    url: 'mailto:manuelpringols@gmail.com',          icon: '📧' },
+      { label: 'Email', url: 'mailto:manuelpringols@gmail.com', icon: '📧' },
       { label: 'LinkedIn', url: 'https://www.linkedin.com/in/manuelpringols', icon: '💼' },
     ],
   },
-
+  
+  singularity: {
+    planet: 'Singolarità',
+    title: 'Genesi',
+  },
 };
