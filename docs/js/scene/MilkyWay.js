@@ -21,12 +21,12 @@ export class MilkyWay {
     const sizes = new Float32Array(count);
 
     const palette = [
-      new THREE.Color(0xffeebb),
-      new THREE.Color(0xfff5e1),
-      new THREE.Color(0xfffaf0),
-      new THREE.Color(0xffd9a0),
-      new THREE.Color(0xc8d0ff),
-    ];
+  new THREE.Color(0xff2233),  // cremisi vivo
+  new THREE.Color(0xff4455),  // rosso chiaro
+  new THREE.Color(0xdd1122),  // rosso profondo
+  new THREE.Color(0xff6677),  // rosa-rosso
+  new THREE.Color(0xcc0033),  // borgogna
+];
 
     for (let i = 0; i < count; i++) {
       const i3 = i * 3;
@@ -80,21 +80,33 @@ export class MilkyWay {
            * Nessun blink sulla dimensione: scala solo con la distanza.
            */
           float size = aSize * (1400.0 / -mv.z);
-          gl_PointSize = max(size, 3.0);
+          gl_PointSize = max(size, 5.0);
 
           gl_Position = projectionMatrix * mv;
         }
       `,
       fragmentShader: /* glsl */`
-        varying vec3 vColor;
-        void main() {
-          vec2 uv = gl_PointCoord - 0.5;
-          float d = length(uv);
-          if (d > 0.5) discard;
-          float a = 1.0 - smoothstep(0.0, 0.5, d);
-          gl_FragColor = vec4(vColor, a * 0.55);
-        }
-      `,
+  varying vec3 vColor;
+
+  void main() {
+    vec2  uv = gl_PointCoord - 0.5;
+    float r  = length(uv);
+    if (r > 0.5) discard;
+
+    vec2  n  = uv / max(r, 0.001);
+    float c2 = n.x * n.x - n.y * n.y;
+    float c4 = 2.0 * c2 * c2 - 1.0;
+
+    float spike = pow(max(0.0, c4), 5.0);
+    float arm   = spike * max(0.0, 1.0 - r * 1.7);
+
+    float core = exp(-r * r * 45.0);
+    float halo = exp(-r * r * 8.0) * 0.12;
+
+    float a = clamp(core + arm * 1.1 + halo, 0.0, 1.0) * 0.55;
+    gl_FragColor = vec4(vColor, a);
+  }
+`,
       transparent: true,
       depthWrite: false,
       blending: THREE.AdditiveBlending,

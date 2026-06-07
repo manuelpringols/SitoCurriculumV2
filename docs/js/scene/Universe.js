@@ -134,7 +134,7 @@ export class Universe {
           float big2  = step(1.75, aSize);
           float coeff = mix(1200.0, 10000.0, big2);
           float size  = aSize * (coeff / -mv.z);
-          gl_PointSize = clamp(size, 3.0, 24.0);
+          gl_PointSize = clamp(size, 5.0, 24.0);
 
           gl_Position = projectionMatrix * mv;
         }
@@ -148,20 +148,18 @@ export class Universe {
     float r  = length(uv);
     if (r > 0.5) discard;
 
-    float theta = atan(uv.y, uv.x);
+    vec2  n  = uv / max(r, 0.001);
+    float c2 = n.x * n.x - n.y * n.y;
+    float c4 = 2.0 * c2 * c2 - 1.0;
 
-    // Stella a 4 punte: cos(4θ) vale 1 sugli assi cardinali, -1 in diagonale
-    float star4    = 0.5 + 0.5 * cos(4.0 * theta);
-    float starGlow = star4 * exp(-r * r * 8.0) * 0.85;
+    float spike = pow(max(0.0, c4), 5.0);
+    float arm   = spike * max(0.0, 1.0 - r * 1.7);
 
-    // Core compatto
-    float core = exp(-r * r * 28.0);
+    float core = exp(-r * r * 45.0);
+    float halo = exp(-r * r * 8.0) * 0.12;
 
-    // Alone morbido
-    float halo = exp(-r * r * 5.5) * 0.22;
-
-    float a = max(max(core, starGlow), halo) * vAlpha;
-    gl_FragColor = vec4(vColor, clamp(a, 0.0, 1.0));
+    float a = clamp(core + arm * 1.1 + halo, 0.0, 1.0) * vAlpha;
+    gl_FragColor = vec4(vColor, a);
   }
 `,
       transparent: true,
