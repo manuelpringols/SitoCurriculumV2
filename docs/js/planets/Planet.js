@@ -76,26 +76,27 @@ export class Planet {
   }
 
   /* ── Atmosfera Fresnel ── */
-  _buildAtmosphere() {
+_buildAtmosphere() {
     if (!this.atmosphereColor) return;
-    const geo = new THREE.SphereGeometry(this.radius * this.atmosphereScale, 48, 48);
+    const size = this.radius * this.atmosphereScale * 2.2;
+    const geo  = new THREE.PlaneGeometry(size, size);
     this.atmosphereMaterial = new THREE.ShaderMaterial({
-      uniforms: {
-        uColor:        { value: new THREE.Color(this.atmosphereColor) },
-        uSunDirection: { value: new THREE.Vector3(1, 0, 0) },
-        uIntensity:    { value: this.atmosphereIntensity },
-        uPower:        { value: this.atmospherePower },
-      },
-      vertexShader:   ATMOSPHERE_VERT,
-      fragmentShader: ATMOSPHERE_FRAG,
-      transparent: true,
-      side: THREE.BackSide,
-      blending: THREE.AdditiveBlending,
-      depthWrite: false,
+        uniforms: {
+            uColor:        { value: new THREE.Color(this.atmosphereColor) },
+            uSunDirection: { value: new THREE.Vector3(1, 0, 0) },
+            uIntensity:    { value: this.atmosphereIntensity },
+            uPlanetFrac:   { value: 1.0 / (this.atmosphereScale * 1.1) },
+        },
+        vertexShader:   ATMOSPHERE_VERT,
+        fragmentShader: ATMOSPHERE_FRAG,
+        transparent:    true,
+        depthWrite:     false,
+        blending:       THREE.AdditiveBlending,
+        side:           THREE.DoubleSide,
     });
     this.atmosphereMesh = new THREE.Mesh(geo, this.atmosphereMaterial);
     this.bodyGroup.add(this.atmosphereMesh);
-  }
+}
 
   /* ── Sun direction ── */
   updateSunDirection(sunWorldPos) {

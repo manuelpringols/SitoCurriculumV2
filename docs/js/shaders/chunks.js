@@ -27,41 +27,41 @@ export const PLANET_VERT = /* glsl */`
 
 /* ─── Vertex shader atmosfera (sfera leggermente più grande) ─── */
 export const ATMOSPHERE_VERT = /* glsl */`
-  varying vec3 vWorldNormal;
-  varying vec3 vWorldPosition;
-  varying vec3 vViewDir;
-
+  varying vec2 vUv;
   void main() {
-    vec4 worldPos  = modelMatrix * vec4(position, 1.0);
-    vWorldPosition = worldPos.xyz;
-    vWorldNormal   = normalize(mat3(modelMatrix) * normal);
-    vViewDir       = normalize(cameraPosition - vWorldPosition);
-    gl_Position    = projectionMatrix * viewMatrix * worldPos;
+    vUv = uv;
+    /* Billboard always-facing-camera, rispetta la scala del bodyGroup */
+    vec3 right   = vec3(viewMatrix[0][0], viewMatrix[1][0], viewMatrix[2][0]);
+    vec3 up      = vec3(viewMatrix[0][1], viewMatrix[1][1], viewMatrix[2][1]);
+    vec3 wCenter = (modelMatrix * vec4(0.0, 0.0, 0.0, 1.0)).xyz;
+    float scale  = length(vec3(modelMatrix[0][0], modelMatrix[1][0], modelMatrix[2][0]));
+    vec3 wPos    = wCenter + right * position.x * scale + up * position.y * scale;
+    gl_Position  = projectionMatrix * viewMatrix * vec4(wPos, 1.0);
   }
 `;
 
-/* ─── Fragment shader atmosfera Fresnel con sun-side highlight ─── */
 export const ATMOSPHERE_FRAG = /* glsl */`
   uniform vec3  uColor;
   uniform vec3  uSunDirection;
   uniform float uIntensity;
-  uniform float uPower;
-  varying vec3 vWorldNormal;
-  varying vec3 vWorldPosition;
-  varying vec3 vViewDir;
+  uniform float uPlanetFrac;
+  varying vec2  vUv;
   void main() {
-    vec3  Nouter  = normalize(vWorldNormal);
-    vec3  N       = -Nouter;
-    vec3  V       = normalize(vViewDir);
-    float ndotv   = clamp(dot(N, V), 0.0, 1.0);
+    vec2  c = vUv - 0.5;
+    float d = length(c) * 2.0;
+    if (d > 1.0) discard;
 
-    /* rim sottile (perimetro) + glow morbido (sfumatura esterna) */
-    float rimSharp = pow(1.0 - ndotv, uPower * 2.8);
-    float rimSoft  = pow(1.0 - ndotv, uPower * 0.9) * 0.28;
-    float fresnel  = rimSharp + rimSoft;
+    /* Anello sfumato: zero al centro, peak al bordo pianeta, dissolve fuori */
+    float w     = 0.04;
+    float inner = smoothstep(uPlanetFrac - w, uPlanetFrac + 0.02, d);
+    float outer = 1.0 - smoothstep(uPlanetFrac + 0.02, uPlanetFrac + w * 0.85, d);
+    float rim   = inner * outer;
 
-    float sunSide = smoothstep(-0.1, 0.55, dot(Nouter, uSunDirection));
-    float alpha   = fresnel * uIntensity * sunSide * 0.35;
-    gl_FragColor  = vec4(uColor * (0.15 + sunSide * 0.25), alpha);
+    /* Modulazione solare approssimata */
+    float sunDot = dot(normalize(c), normalize(uSunDirection.xy));
+    float sunMod = clamp(sunDot * 0.25 + 0.85, 0.0, 1.0);
+
+    float alpha  = rim * uIntensity * sunMod * 0.65;
+    gl_FragColor = vec4(uColor * 0.55, alpha);
   }
 `;

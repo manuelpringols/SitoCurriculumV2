@@ -5,10 +5,10 @@
  */
 export class DeviceManager {
   constructor() {
-    this.isMobile  = this._detectMobile();
-    this.isTablet  = this._detectTablet();
-    this.isLowEnd  = this._detectLowEnd();
-    this.quality   = this._resolveQuality();
+    this.isMobile = this._detectMobile();
+    this.isTablet = this._detectTablet();
+    this.isLowEnd = this._detectLowEnd();
+    this.quality = this._resolveQuality();
     this.pixelRatio = this._resolvePixelRatio();
 
     console.log(
@@ -37,20 +37,20 @@ export class DeviceManager {
   }
 
   _resolveQuality() {
-    if (this.isMobile)  return 'low';
-    if (this.isLowEnd)  return 'medium';
+    if (this.isMobile) return 'low';
+    if (this.isLowEnd) return 'medium';
     return 'high';
   }
 
   _resolvePixelRatio() {
     const dpr = window.devicePixelRatio || 1;
-    if (this.isMobile)  return Math.min(dpr, 1.5);
-    if (this.isTablet)  return Math.min(dpr, 2.0);
+    if (this.isMobile) return Math.min(dpr, 2.0);   // era 1.5 → stelle più nitide
+    if (this.isTablet) return Math.min(dpr, 2.0);
     return Math.min(dpr, 2.0);
   }
 
-  get antialias()          { return !this.isMobile; }
-  get shadowsEnabled()     { return !this.isMobile; }
+  get antialias() { return !this.isMobile; }
+  get shadowsEnabled() { return !this.isMobile; }
 
   get starCount() {
     /* Ridotto ~20% — meno stelline sparse, le grandi brillanti rimangono */
@@ -79,9 +79,9 @@ export class DeviceManager {
 
   refresh() {
     const wasMobile = this.isMobile;
-    this.isMobile   = this._detectMobile();
-    this.isTablet   = this._detectTablet();
-    this.quality    = this._resolveQuality();
+    this.isMobile = this._detectMobile();
+    this.isTablet = this._detectTablet();
+    this.quality = this._resolveQuality();
     this.pixelRatio = this._resolvePixelRatio();
     return wasMobile !== this.isMobile;
   }

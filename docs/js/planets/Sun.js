@@ -94,10 +94,11 @@ export class Sun {
      * per rompere la simmetria circolare → raggi e plume irregolari.
      */
     const layers = [
-      { size: R * 5.5, color: 0xff5500, alpha: 0.50, falloff: 2.8, rayFreq:  5.0, rayAmt: 0.38, speed: 0.18 },
-      { size: R * 9.0, color: 0xcc2200, alpha: 0.28, falloff: 1.8, rayFreq:  8.0, rayAmt: 0.28, speed: 0.12 },
-      { size: R *14.0, color: 0x881100, alpha: 0.13, falloff: 1.1, rayFreq: 11.0, rayAmt: 0.20, speed: 0.07 },
-      { size: R *22.0, color: 0x440800, alpha: 0.07, falloff: 0.6, rayFreq:  4.0, rayAmt: 0.12, speed: 0.03 },
+      { size: R * 6.5, color: 0xff5500, alpha: 0.50, falloff: 2.2, rayFreq: 5.0, rayAmt: 0.38, speed: 0.18 },
+      { size: R * 11.0, color: 0xcc2200, alpha: 0.28, falloff: 1.4, rayFreq: 8.0, rayAmt: 0.28, speed: 0.12 },
+      { size: R * 18.0, color: 0x881100, alpha: 0.13, falloff: 0.85, rayFreq: 11.0, rayAmt: 0.20, speed: 0.07 },
+      { size: R * 32.0, color: 0x440800, alpha: 0.07, falloff: 0.42, rayFreq: 4.0, rayAmt: 0.12, speed: 0.03 },
+      { size: R * 52.0, color: 0x220400, alpha: 0.03, falloff: 0.30, rayFreq: 3.0, rayAmt: 0.06, speed: 0.015 },
     ];
 
     const vert = /* glsl */`
@@ -157,27 +158,27 @@ export class Sun {
       }
     `;
 
-    this.coronaMats  = [];
+    this.coronaMats = [];
     this.coronaMeshes = [];
 
     layers.forEach(({ size, color, alpha, falloff, rayFreq, rayAmt, speed }) => {
       const geo = new THREE.PlaneGeometry(size, size);
       const mat = new THREE.ShaderMaterial({
         uniforms: {
-          uColor:   { value: new THREE.Color(color) },
-          uAlpha:   { value: alpha },
+          uColor: { value: new THREE.Color(color) },
+          uAlpha: { value: alpha },
           uFalloff: { value: falloff },
           uRayFreq: { value: rayFreq },
-          uRayAmt:  { value: rayAmt },
-          uTime:    { value: 0 },
-          uSpeed:   { value: speed },
+          uRayAmt: { value: rayAmt },
+          uTime: { value: 0 },
+          uSpeed: { value: speed },
         },
-        vertexShader:  vert,
+        vertexShader: vert,
         fragmentShader: frag,
         transparent: true,
-        blending:    THREE.AdditiveBlending,
-        depthWrite:  false,
-        side:        THREE.DoubleSide,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false,
+        side: THREE.DoubleSide,
       });
       const mesh = new THREE.Mesh(geo, mat);
       this.group.add(mesh);
@@ -190,25 +191,25 @@ export class Sun {
   _createProminences() {
     const count = 200;
     const positions = new Float32Array(count * 3);
-    const speeds    = new Float32Array(count);
-    const sizes     = new Float32Array(count);
+    const speeds = new Float32Array(count);
+    const sizes = new Float32Array(count);
 
     for (let i = 0; i < count; i++) {
       const i3 = i * 3;
       const theta = Math.random() * Math.PI * 2;
-      const phi   = Math.acos(2 * Math.random() - 1);
-      const r     = R * 1.05 + Math.random() * R * 0.4;
-      positions[i3]     = r * Math.sin(phi) * Math.cos(theta);
+      const phi = Math.acos(2 * Math.random() - 1);
+      const r = R * 1.05 + Math.random() * R * 0.4;
+      positions[i3] = r * Math.sin(phi) * Math.cos(theta);
       positions[i3 + 1] = r * Math.sin(phi) * Math.sin(theta);
       positions[i3 + 2] = r * Math.cos(phi);
       speeds[i] = 0.4 + Math.random() * 1.8;
-      sizes[i]  = 2.0 + Math.random() * 6.0;
+      sizes[i] = 2.0 + Math.random() * 6.0;
     }
 
     const geo = new THREE.BufferGeometry();
     geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-    geo.setAttribute('speed',    new THREE.BufferAttribute(speeds, 1));
-    geo.setAttribute('psize',    new THREE.BufferAttribute(sizes, 1));
+    geo.setAttribute('speed', new THREE.BufferAttribute(speeds, 1));
+    geo.setAttribute('psize', new THREE.BufferAttribute(sizes, 1));
 
     const mat = new THREE.ShaderMaterial({
       uniforms: { uTime: { value: 0 } },
@@ -241,7 +242,7 @@ export class Sun {
     });
 
     this.prominenceMesh = new THREE.Points(geo, mat);
-    this.prominenceMat  = mat;
+    this.prominenceMat = mat;
     this.group.add(this.prominenceMesh);
   }
 
