@@ -89,7 +89,7 @@ export class Planet {
       vertexShader:   ATMOSPHERE_VERT,
       fragmentShader: ATMOSPHERE_FRAG,
       transparent: true,
-      side: THREE.FrontSide,
+      side: THREE.BackSide,
       blending: THREE.AdditiveBlending,
       depthWrite: false,
     });

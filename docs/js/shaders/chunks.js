@@ -50,12 +50,18 @@ export const ATMOSPHERE_FRAG = /* glsl */`
   varying vec3 vWorldPosition;
   varying vec3 vViewDir;
   void main() {
-    vec3  N       = normalize(vWorldNormal);
+    vec3  Nouter  = normalize(vWorldNormal);
+    vec3  N       = -Nouter;
     vec3  V       = normalize(vViewDir);
-    float fresnel = pow(1.0 - clamp(dot(N, V), 0.0, 1.0), uPower);
-    float sunSide = smoothstep(-0.1, 0.55, dot(N, uSunDirection));
-    /* alpha = 0 sul lato buio → niente bolla sul retro */
-    float alpha   = fresnel * uIntensity * sunSide;
-    gl_FragColor  = vec4(uColor * (0.4 + sunSide * 0.6), alpha);
+    float ndotv   = clamp(dot(N, V), 0.0, 1.0);
+
+    /* rim sottile (perimetro) + glow morbido (sfumatura esterna) */
+    float rimSharp = pow(1.0 - ndotv, uPower * 2.8);
+    float rimSoft  = pow(1.0 - ndotv, uPower * 0.9) * 0.28;
+    float fresnel  = rimSharp + rimSoft;
+
+    float sunSide = smoothstep(-0.1, 0.55, dot(Nouter, uSunDirection));
+    float alpha   = fresnel * uIntensity * sunSide * 0.35;
+    gl_FragColor  = vec4(uColor * (0.15 + sunSide * 0.25), alpha);
   }
 `;

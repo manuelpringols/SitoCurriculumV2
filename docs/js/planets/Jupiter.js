@@ -11,7 +11,7 @@ export class Jupiter extends Planet {
 
     super(scene, {
       ...options,
-      atmosphereColor: null,
+      atmosphereColor: 0xffaa55,
       atmosphereIntensity: 0.26,   // era 0.70
       atmospherePower: 3.0,
       atmosphereScale: 1.05,

@@ -855,25 +855,27 @@ class App {
 
   _bootSequence() {
     setTimeout(() => {
-      const loading = document.getElementById('loading-screen');
-      loading.classList.add('fade-out');
-      setTimeout(() => {
-        loading.style.display = 'none';
-        anime({
-          targets: '#title-block',
-          opacity: [0, 1], translateY: [-24, 0],
-          duration: 1700, easing: 'easeOutQuart',
-          complete: () => { this._booting = false; },
-        });
-        anime({
-          targets: '#hint-block',
-          opacity: [0, 0.85],
-          duration: 2000, delay: 1100,
-          easing: 'easeOutCubic',
-        });
-      }, 900);
-    }, 1500);
-  }
+        const loading = document.getElementById('loading-screen');
+        loading.classList.add('fade-out');
+        setTimeout(() => {
+            loading.style.display = 'none';
+            anime({
+                targets: '#title-block',
+                opacity: [0, 1], translateY: [-24, 0],
+                duration: 1400,            // era 1700
+                easing: 'easeOutQuart',
+                complete: () => { this._booting = false; },
+            });
+            anime({
+                targets: '#hint-block',
+                opacity: [0, 0.85],
+                duration: 1600,            // era 2000
+                delay: 500,                // era 1100 ← colpevole principale
+                easing: 'easeOutCubic',
+            });
+        }, 650);                           // era 900
+    }, 900);                               // era 1500
+}
 
   /* ══════════════════════════════ CURSORE ════════════════════════════ */
 
