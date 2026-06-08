@@ -35,7 +35,7 @@ export class Singularity {
         this._buildOuterHalo();
         this._buildHitbox();
 
-        this.mesh = this._hitboxMesh;
+        this.mesh = this._hitboxMesh; 
         this.mesh.userData.sectionKey = this.sectionKey;
         this.mesh.userData.planetRef = this;
     }

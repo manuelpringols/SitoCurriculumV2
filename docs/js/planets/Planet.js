@@ -155,12 +155,10 @@ export class Planet {
 
   /* ── Highlight hover: atmosfera + scala ── */
   highlight(on) {
-    /* Atmosfera */
     if (this.atmosphereMaterial?.uniforms?.uIntensity) {
       this.atmosphereMaterial.uniforms.uIntensity.value =
         on ? this.atmosphereIntensity * 1.8 : this.atmosphereIntensity;
     }
-    /* Scala: 1.15× on hover, torna a 1.0 all'uscita */
-    this._scaleTarget = on ? 1.8 : 1.0;
-  }
+    this._scaleTarget = on ? 1.12 : 1.0;  // era 1.8 → coerente col commento
+}
 }

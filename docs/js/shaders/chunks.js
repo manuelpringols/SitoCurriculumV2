@@ -46,19 +46,16 @@ export const ATMOSPHERE_FRAG = /* glsl */`
   uniform vec3  uSunDirection;
   uniform float uIntensity;
   uniform float uPower;
-
   varying vec3 vWorldNormal;
   varying vec3 vWorldPosition;
   varying vec3 vViewDir;
-
   void main() {
-    float fresnel = pow(1.0 - clamp(dot(vWorldNormal, vViewDir), 0.0, 1.0), uPower);
-
-    // Più brillante sul lato illuminato dal sole
-    float sunDot  = max(dot(vWorldNormal, uSunDirection), 0.0);
-    float sunSide = smoothstep(-0.3, 0.4, dot(normalize(vWorldNormal), uSunDirection));
-
-    float alpha = fresnel * uIntensity * (0.3 + sunSide * 1.0);
-    gl_FragColor = vec4(uColor * (0.5 + sunSide * 0.8), alpha);
+    vec3  N       = normalize(vWorldNormal);
+    vec3  V       = normalize(vViewDir);
+    float fresnel = pow(1.0 - clamp(dot(N, V), 0.0, 1.0), uPower);
+    float sunSide = smoothstep(-0.1, 0.55, dot(N, uSunDirection));
+    /* alpha = 0 sul lato buio → niente bolla sul retro */
+    float alpha   = fresnel * uIntensity * sunSide;
+    gl_FragColor  = vec4(uColor * (0.4 + sunSide * 0.6), alpha);
   }
 `;

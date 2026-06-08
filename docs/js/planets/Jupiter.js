@@ -1,6 +1,6 @@
 import * as THREE from 'three';
-import { Planet }      from './Planet.js';
-import { NOISE_GLSL }  from '../shaders/noise.js';
+import { Planet } from './Planet.js';
+import { NOISE_GLSL } from '../shaders/noise.js';
 import { PLANET_VERT } from '../shaders/chunks.js';
 
 export class Jupiter extends Planet {
@@ -11,11 +11,11 @@ export class Jupiter extends Planet {
 
     super(scene, {
       ...options,
-      atmosphereColor:     0xffaa55,
+      atmosphereColor: null,
       atmosphereIntensity: 0.26,   // era 0.70
-      atmospherePower:     3.0,
-      atmosphereScale:     1.05,
-      axialTilt:           3 * Math.PI / 180,
+      atmospherePower: 3.0,
+      atmosphereScale: 1.05,
+      axialTilt: 3 * Math.PI / 180,
     });
   }
 
@@ -24,9 +24,9 @@ export class Jupiter extends Planet {
 
     this.material = new THREE.ShaderMaterial({
       uniforms: {
-        uTime:         { value: 0 },
+        uTime: { value: 0 },
         uSunDirection: { value: new THREE.Vector3(1, 0, 0) },
-        uTexture:      { value: this.options?._tex ?? null },
+        uTexture: { value: this.options?._tex ?? null },
       },
       vertexShader: PLANET_VERT,
       fragmentShader: NOISE_GLSL + /* glsl */`
@@ -66,10 +66,10 @@ export class Jupiter extends Planet {
           float lightDot = dot(Nw, uSunDirection);
           float dayMix   = smoothstep(-0.2, 0.3, lightDot);
           vec3 day   = surface * (0.18 + max(lightDot, 0.0) * 0.52);
-          vec3 night = surface * 0.06;
+          vec3 night = surface * 0.13;
           vec3 color = mix(night, day, dayMix);
-          float limb = pow(clamp(dot(Nw, vViewDir), 0.0, 1.0), 0.6);
-          color = mix(color * 0.55, color, limb);
+          float limb = pow(clamp(dot(Nw, vViewDir), 0.0, 1.0), 0.4);
+          color = mix(color * 0.84, color, limb);
 
           gl_FragColor = vec4(color, 1.0);
         }

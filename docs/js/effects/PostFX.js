@@ -1,8 +1,8 @@
 import * as THREE from 'three';
-import { EffectComposer }  from 'three/addons/postprocessing/EffectComposer.js';
-import { RenderPass }      from 'three/addons/postprocessing/RenderPass.js';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
-import { OutputPass }      from 'three/addons/postprocessing/OutputPass.js';
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 
 /**
  * PostFX — pipeline di post-processing.
@@ -13,9 +13,9 @@ import { OutputPass }      from 'three/addons/postprocessing/OutputPass.js';
 export class PostFX {
   constructor(renderer, scene, camera, device) {
     this.renderer = renderer;
-    this.scene    = scene;
-    this.camera   = camera;
-    this.device   = device;
+    this.scene = scene;
+    this.camera = camera;
+    this.device = device;
 
     this.composer = new EffectComposer(renderer);
     this.composer.setPixelRatio(device.pixelRatio);
@@ -27,10 +27,9 @@ export class PostFX {
 
     /* Bloom — parametri tarati per spazio */
     /* Resolution, strength, radius, threshold */
-    const bloomStrength  = device.isMobile ? 0.55 : 0.85;
-    const bloomRadius    = 0.65;
-    const bloomThreshold = 0.15;
-
+    const bloomStrength = device.isMobile ? 0.45 : 0.70;
+    const bloomRadius = 0.65;
+    const bloomThreshold = 0.38;
     this.bloomPass = new UnrealBloomPass(
       new THREE.Vector2(window.innerWidth, window.innerHeight),
       bloomStrength,

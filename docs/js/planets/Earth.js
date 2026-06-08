@@ -1,6 +1,6 @@
 import * as THREE from 'three';
-import { Planet }      from './Planet.js';
-import { NOISE_GLSL }  from '../shaders/noise.js';
+import { Planet } from './Planet.js';
+import { NOISE_GLSL } from '../shaders/noise.js';
 import { PLANET_VERT } from '../shaders/chunks.js';
 
 /**
@@ -13,18 +13,18 @@ export class Earth extends Planet {
   constructor(scene, options = {}) {
     /* Carica texture prima di chiamare super (che chiama _buildBody) */
     const loader = new THREE.TextureLoader();
-    options._texDay   = loader.load('./textures/2k_earth_daymap.jpg',
+    options._texDay = loader.load('./textures/2k_earth_daymap.jpg',
       t => { t.colorSpace = THREE.SRGBColorSpace; });
     options._texNight = loader.load('./textures/2k_earth_nightmap.jpg',
       t => { t.colorSpace = THREE.SRGBColorSpace; });
 
     super(scene, {
       ...options,
-      atmosphereColor:     0x6ab6ff,
+      atmosphereColor: 0x6ab6ff,
       atmosphereIntensity: 0.85,
-      atmospherePower:     2.8,
-      atmosphereScale:     1.06,
-      axialTilt:           23.5 * Math.PI / 180,
+      atmospherePower: 2.8,
+      atmosphereScale: 1.06,
+      axialTilt: 23.5 * Math.PI / 180,
     });
     this._buildClouds();
   }
@@ -34,10 +34,10 @@ export class Earth extends Planet {
 
     this.material = new THREE.ShaderMaterial({
       uniforms: {
-        uTime:         { value: 0 },
+        uTime: { value: 0 },
         uSunDirection: { value: new THREE.Vector3(1, 0, 0) },
-        uTexDay:       { value: this.options?._texDay   ?? null },
-        uTexNight:     { value: this.options?._texNight ?? null },
+        uTexDay: { value: this.options?._texDay ?? null },
+        uTexNight: { value: this.options?._texNight ?? null },
       },
       vertexShader: PLANET_VERT,
       fragmentShader: NOISE_GLSL + /* glsl */`
@@ -87,8 +87,8 @@ export class Earth extends Planet {
           color += vec3(1.0, 0.96, 0.82) * spec * dayMix * oceanMask * 0.75;
 
           /* Limb darkening */
-          float limb = pow(clamp(dot(N, vViewDir), 0.0, 1.0), 0.65);
-          color = mix(color * 0.55, color, limb);
+          float limb = pow(clamp(dot(N, vViewDir), 0.0, 1.0), 0.4);
+          color = mix(color * 0.78, color, limb);
 
           gl_FragColor = vec4(color, 1.0);
         }
@@ -97,7 +97,7 @@ export class Earth extends Planet {
 
     /* Passa le texture agli uniform dopo che il material è costruito */
     if (this.options?._texDay)
-      this.material.uniforms.uTexDay.value   = this.options._texDay;
+      this.material.uniforms.uTexDay.value = this.options._texDay;
     if (this.options?._texNight)
       this.material.uniforms.uTexNight.value = this.options._texNight;
 
@@ -111,7 +111,7 @@ export class Earth extends Planet {
     const geo = new THREE.SphereGeometry(this.radius * 1.018, 48, 48);
     this.cloudMaterial = new THREE.ShaderMaterial({
       uniforms: {
-        uTime:         { value: 0 },
+        uTime: { value: 0 },
         uSunDirection: { value: new THREE.Vector3(1, 0, 0) },
       },
       vertexShader: PLANET_VERT,

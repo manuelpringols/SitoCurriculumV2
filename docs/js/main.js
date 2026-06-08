@@ -706,8 +706,13 @@ class App {
     panel.classList.remove('nav-hidden');
     panel.style.opacity = '';
     panel.style.transform = '';
+    panel.style.pointerEvents = '';        // ← FIX: ripristina sempre
     panel.classList.remove('opening');
     panel.classList.add('closing');
+    panel.classList.remove('hidden', 'closing', 'nav-hidden');
+    panel.style.opacity = '';
+    panel.style.transform = '';
+    panel.style.pointerEvents = '';            //
     setTimeout(() => {
       panel.classList.add('hidden');
       panel.classList.remove('closing');
